@@ -66,6 +66,58 @@ The `--check` flag will:
 - Exit with code 0 if no changes are needed
 - Display timing and file statistics
 
+### Git Integration
+
+**Format only changed Java files in a git commit hook:**
+
+Create a pre-commit hook (`.git/hooks/pre-commit`):
+```bash
+#!/bin/bash
+
+# Get list of staged Java files
+STAGED_JAVA_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.java$')
+
+if [ -n "$STAGED_JAVA_FILES" ]; then
+    echo "Formatting staged Java files..."
+    
+    # Format the staged files
+    jbang-fmt --settings jbang $STAGED_JAVA_FILES
+    
+    # Re-stage the formatted files
+    git add $STAGED_JAVA_FILES
+    
+    echo "Java files formatted and re-staged."
+fi
+```
+
+**Check-only hook to prevent commits with unformatted code:**
+
+Create a pre-commit hook (`.git/hooks/pre-commit`):
+```bash
+#!/bin/bash
+
+# Get list of staged Java files
+STAGED_JAVA_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.java$')
+
+if [ -n "$STAGED_JAVA_FILES" ]; then
+    echo "Checking Java file formatting..."
+    
+    # Check if files need formatting
+    if ! jbang-fmt --settings jbang --check $STAGED_JAVA_FILES; then
+        echo "❌ Some Java files are not properly formatted!"
+        echo "Run 'jbang-fmt $STAGED_JAVA_FILES' to fix them."
+        exit 1
+    fi
+    
+    echo "✅ All Java files are properly formatted."
+fi
+```
+
+**Make the hook executable:**
+```bash
+chmod +x .git/hooks/pre-commit
+```
+
 ### Output to Stdout
 
 **Print formatted content to stdout instead of modifying files:**
