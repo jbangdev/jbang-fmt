@@ -22,6 +22,7 @@ This tool was created to solve that problem: it **formats Java code while leavin
 * **Stdout output:** Use `--stdout` to print formatted content to stdout instead of modifying files.
 * **Detailed statistics:** Shows processing time and file counts (processed, changed, clean, skipped).
 * **Eclipse formatter support:** Uses the Eclipse Java code formatter under the hood, with the ability to load custom Eclipse `.xml` or `.prefs` style settings.
+* **Advanced configuration:** Override specific formatter settings, line length, and Java version.
 * **Easy to use:** Simple CLI interface, works with files and directories, and can be run via https://www.jbang.dev/[JBang].
 * **Customizable:** Supports toggling JBang-friendly mode and specifying custom formatter settings.
 
@@ -92,7 +93,7 @@ This is useful for:
 **Use Google Java Format style:**
 [source,bash]
 ----
-jbang-fmt --settings google MyFile.java
+jbang-fmt --style google MyFile.java
 ----
 
 The following styles are default bundled:
@@ -100,17 +101,43 @@ The following styles are default bundled:
 * `eclipse` — Eclipse default Java formatter (Eclipse IDE style)
 * `google` — Google Java Style Guide
 * `java` — Java community style (OpenJDK-inspired)
-* `jbang` — JBang's recommended style
+* `jbang` — JBang's recommended style (default)
 * `quarkus` — Quarkus project style
 * `spring` — Spring Framework style
 
 **Use custom Eclipse settings file:**
 [source,bash]
 ----
-jbang-fmt --settings /path/to/my-formatter.xml MyFile.java
+jbang-fmt --style /path/to/my-formatter.xml MyFile.java
 ----
 
-you can also use JBang magic url fetching for arguments
+You can also use JBang magic URL fetching for arguments.
+
+=== Advanced Configuration
+
+**Override specific formatter settings:**
+[source,bash]
+----
+jbang-fmt --settings "brace_style=next_line,indentation_size=4" MyFile.java
+----
+
+**Override line length:**
+[source,bash]
+----
+jbang-fmt --line-length 120 MyFile.java
+----
+
+**Override Java version for formatting:**
+[source,bash]
+----
+jbang-fmt --java 17 MyFile.java
+----
+
+**Combine multiple options:**
+[source,bash]
+----
+jbang-fmt --style google --line-length 100 --java 21 MyFile.java
+----
 
 === Touch Directives
 
@@ -142,6 +169,7 @@ Would reformat 1 files (out of 3) in 0.2s. Run without --check to apply.
 ----
 
 The statistics show:
+
 * **Total files processed:** All Java files that were examined
 * **Changed:** Files that were modified by the formatter
 * **Clean:** Files that were already properly formatted
@@ -166,7 +194,7 @@ if [ -n "$STAGED_JAVA_FILES" ]; then
     echo "Formatting staged Java files..."
     
     # Format the staged files
-    jbang-fmt --settings jbang $STAGED_JAVA_FILES
+    jbang-fmt --style jbang $STAGED_JAVA_FILES
     
     # Re-stage the formatted files
     git add $STAGED_JAVA_FILES
@@ -189,7 +217,7 @@ if [ -n "$STAGED_JAVA_FILES" ]; then
     echo "Checking Java file formatting..."
     
     # Check if files need formatting
-    if ! jbang-fmt --settings jbang --check $STAGED_JAVA_FILES; then
+    if ! jbang-fmt --style jbang --check $STAGED_JAVA_FILES; then
         echo "❌ Some Java files are not properly formatted!"
         echo "Run 'jbang-fmt $STAGED_JAVA_FILES' to fix them."
         exit 1
@@ -205,6 +233,207 @@ fi
 chmod +x .git/hooks/pre-commit
 ----
 
+=== Maven Integration
+
+Use the jbang-maven-plugin to format Java files in your Maven project:
+
+**Add the plugin to your `pom.xml`:**
+[source,xml]
+----
+<plugin>
+    <groupId>dev.jbang</groupId>
+    <artifactId>jbang-maven-plugin</artifactId>
+    <version>0.4.0</version>
+    <executions>
+        <execution>
+            <id>format</id>
+            <goals>
+                <goal>run</goal>
+            </goals>
+            <configuration>
+                <script>jbang-fmt@jbangdev/jbang-fmt</script>
+                <args>
+                    <arg>--style</arg>
+                    <arg>jbang</arg>
+                    <arg>src/main/java</arg>
+                    <arg>src/test/java</arg>
+                </args>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+
+**Run formatting:**
+[source,bash]
+----
+mvn jbang:run@format
+----
+
+**Check formatting (for CI):**
+[source,xml]
+----
+<plugin>
+    <groupId>dev.jbang</groupId>
+    <artifactId>jbang-maven-plugin</artifactId>
+    <version>0.4.0</version>
+    <executions>
+        <execution>
+            <id>check-format</id>
+            <goals>
+                <goal>run</goal>
+            </goals>
+            <configuration>
+                <script>jbang-fmt@jbangdev/jbang-fmt</script>
+                <args>
+                    <arg>--style</arg>
+                    <arg>jbang</arg>
+                    <arg>--check</arg>
+                    <arg>src/main/java</arg>
+                    <arg>src/test/java</arg>
+                </args>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+
+**Run format check:**
+[source,bash]
+----
+mvn jbang:run@check-format
+----
+
+**Integration with Maven build lifecycle (format before compile):**
+[source,xml]
+----
+<plugin>
+    <groupId>dev.jbang</groupId>
+    <artifactId>jbang-maven-plugin</artifactId>
+    <version>0.4.0</version>
+    <executions>
+        <execution>
+            <id>format-before-compile</id>
+            <phase>generate-sources</phase>
+            <goals>
+                <goal>run</goal>
+            </goals>
+            <configuration>
+                <script>jbang-fmt@jbangdev/jbang-fmt</script>
+                <args>
+                    <arg>--style</arg>
+                    <arg>jbang</arg>
+                    <arg>src/main/java</arg>
+                    <arg>src/test/java</arg>
+                </args>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+
+This will automatically format your Java files during the `generate-sources` phase, which runs before compilation. The formatting happens automatically when you run:
+
+[source,bash]
+----
+mvn compile
+----
+
+**Alternative: Format check before compile (fail build if unformatted):**
+[source,xml]
+----
+<plugin>
+    <groupId>dev.jbang</groupId>
+    <artifactId>jbang-maven-plugin</artifactId>
+    <version>0.4.0</version>
+    <executions>
+        <execution>
+            <id>check-format-before-compile</id>
+            <phase>generate-sources</phase>
+            <goals>
+                <goal>run</goal>
+            </goals>
+            <configuration>
+                <script>jbang-fmt@jbangdev/jbang-fmt</script>
+                <args>
+                    <arg>--style</arg>
+                    <arg>jbang</arg>
+                    <arg>--check</arg>
+                    <arg>src/main/java</arg>
+                    <arg>src/test/java</arg>
+                </args>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+
+This will check formatting during the `generate-sources` phase and fail the build if any files need formatting.
+
+=== Gradle Integration
+
+Use the jbang-gradle-plugin to format Java files in your Gradle project:
+
+**Add the plugin to your `build.gradle`:**
+[source,gradle]
+----
+plugins {
+    id 'dev.jbang.gradle' version '0.4.0'
+}
+
+jbang {
+    script 'jbang-fmt@jbangdev/jbang-fmt'
+    args '--style', 'jbang', 'src/main/java', 'src/test/java'
+}
+----
+
+**Run formatting:**
+[source,bash]
+----
+./gradlew jbang
+----
+
+**For format checking, create a separate task:**
+[source,gradle]
+----
+plugins {
+    id 'dev.jbang.gradle' version '0.4.0'
+}
+
+task checkFormat(type: dev.jbang.gradle.JbangTask) {
+    script 'jbang-fmt@jbangdev/jbang-fmt'
+    args '--style', 'jbang', '--check', 'src/main/java', 'src/test/java'
+}
+
+task format(type: dev.jbang.gradle.JbangTask) {
+    script 'jbang-fmt@jbangdev/jbang-fmt'
+    args '--style', 'jbang', 'src/main/java', 'src/test/java'
+}
+----
+
+**Run tasks:**
+[source,bash]
+----
+./gradlew format        # Format files
+./gradlew checkFormat   # Check formatting
+----
+
+**Integration with build lifecycle:**
+[source,gradle]
+----
+plugins {
+    id 'dev.jbang.gradle' version '0.4.0'
+}
+
+task checkFormat(type: dev.jbang.gradle.JbangTask) {
+    script 'jbang-fmt@jbangdev/jbang-fmt'
+    args '--style', 'jbang', '--check', 'src/main/java', 'src/test/java'
+}
+
+// Run format check before compilation
+compileJava.dependsOn checkFormat
+----
+
 == TODO
 
-* Document how you can use jbang plugin in maven/gradle to run formatting
+* Add more examples for different formatter styles in Maven/Gradle

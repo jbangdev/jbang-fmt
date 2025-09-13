@@ -6,13 +6,16 @@
 
 //FILES ../../../google.xml ../../../java.xml ../../../eclipse.xml ../../../jbang.xml ../../../spring.prefs ../../../quarkus.xml
 
-//SOURCES JavaFormatter.java CodeRange.java
+//SOURCES JavaFormatter.java CodeRange.java KeyValueConsumer.java CommaSeparatedConverter.java
 
 package dev.jbang.fmt;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
@@ -69,6 +72,8 @@ public class Main implements Callable<Integer> {
 		}
 	}
 
+	
+
 	@Option(names = "--touch-directives", hidden = true, negatable = true, description = "Let formatter touch JBang directives", defaultValue = "false", fallbackValue = "false")
 	boolean jbangFriendly;
 
@@ -78,11 +83,21 @@ public class Main implements Callable<Integer> {
 	@Option(names = "--check", description = "Check if files would change. Exit 1 if any file would change.")
 	private boolean check;
 
-	@Option(names = "--settings", description = "Eclipse formatter settings file (.xml or .prefs)")
-	private Path settingsFile;
+	@Option(names = "--style", description = "Eclipse formatter settings file (.xml or .prefs)", defaultValue = "jbang")
+	private Path styleFile;
+
+	@Option(names = "--settings", description = "Override of matter settings file (key=value)",converter = CommaSeparatedConverter.class)
+	private List<String> settings;
 
 	@Parameters(description = "Java files or directories to format", arity = "1..*")
 	private List<Path> sources;
+
+	@Option(names = "--line-length", description = "Override line length for formatter")
+	private Optional<Integer> lineLength;
+
+	@Option(names = "--java", description = "Override the java version in formatter (8, 11, 17, 21, etc.)")
+	private Optional<String> javaVersion;
+
 
 	public static void main(String[] args) {
 		int exitCode = new CommandLine(new Main()).execute(args);
@@ -94,13 +109,41 @@ public class Main implements Callable<Integer> {
 
 		try {
 			JavaFormatter formatter;
+			final Map<String, String> realsettings = JavaFormatter.loadEclipseSettings(styleFile);
+			 
+			if (lineLength.isPresent()) {
+				var override = realsettings.put("org.eclipse.jdt.core.formatter.comment.line_length", lineLength.get().toString());
+				if (override != null) {
+					System.out.println("Overriding line length from " + override + " to " + lineLength.get());
+				}
+				override = realsettings.put("org.eclipse.jdt.core.formatter.comment.line_length", lineLength.get().toString());
+				if (override != null) {
+					System.out.println("Overriding comment line length from " + override + " to " + lineLength.get());
+				}
 
-			if (settingsFile != null) {
-				var settings = JavaFormatter.loadEclipseSettings(settingsFile);
-				formatter = new JavaFormatter(settingsFile.toString(), settings, jbangFriendly);
-			} else {
-				formatter = new JavaFormatter("default", null, jbangFriendly);
 			}
+
+			if (javaVersion.isPresent()) {
+				var override = realsettings.put("org.eclipse.jdt.core.compiler.source", javaVersion.map(v->"8".equals(v)?"1.8":v).get());
+				if (override != null) {
+					System.out.println("Overriding java version from " + override + " to " + javaVersion.get());
+				}
+			}
+
+			if (settings != null) {
+				settings.stream().map(s->s.split("=")).forEach(kv -> {	
+					if(!kv[0].startsWith("org.eclipse.jdt.core.formatter.")) {
+						kv[0] = "org.eclipse.jdt.core.formatter." + kv[0];
+					}
+					var override = realsettings.put(kv[0], kv[1]);
+					if (override != null) {
+						System.out.println("Overriding " + kv[0] + " from " + override + " to " + kv[1]);
+					}
+				}
+				);
+			}
+
+			formatter = new JavaFormatter(styleFile.toString(), realsettings, jbangFriendly);
 
 			System.out.println("Formatting with " + formatter + "...");
 

@@ -51,7 +51,7 @@ class JavaFormatter {
 			regions.add(new Region(range.start(), range.end() - range.start()));
 		}
 
-		CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(settings);
+		CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(settings,ToolFactory.M_FORMAT_EXISTING);
 		TextEdit edit = codeFormatter.format(CodeFormatter.K_COMPILATION_UNIT, content, regions.toArray(new IRegion[0]),
 				0, null);
 
