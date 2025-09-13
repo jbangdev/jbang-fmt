@@ -15,7 +15,10 @@ This tool was created to solve that problem: it **formats Java code while leavin
 
 ## Features
 
-- **JBang-friendly formatting:** By default, the tool detects and protects JBang directives, only formatting the actual true Java code and comments.
+- **Works 100% with Java while having JBang-friendly formatting:** By default, the tool detects and protects JBang directives, only formatting the actual true Java code and comments.
+- **Check mode for CI/commit hooks:** Use `--check` to check if files would be formatted. Exit with 1 if any files would change.
+- **Stdout output:** Use `--stdout` to print formatted content to stdout instead of modifying files.
+- **Detailed statistics:** Shows processing time and file counts (processed, changed, clean, skipped).
 - **Eclipse formatter support:** Uses the Eclipse Java code formatter under the hood, with the ability to load custom Eclipse `.xml` or `.prefs` style settings.
 - **Easy to use:** Simple CLI interface, works with files and directories, and can be run via [JBang](https://www.jbang.dev/).
 - **Customizable:** Supports toggling JBang-friendly mode and specifying custom formatter settings.
@@ -44,6 +47,36 @@ jbang-fmt src/
 ```bash
 jbang-fmt MyFile.java src/ tests/
 ```
+
+### Check Mode and CI Integration
+
+**Check if files would be formatted (perfect for CI):**
+```bash
+jbang-fmt --check MyFile.java
+```
+
+**Check multiple files and directories:**
+```bash
+jbang-fmt --check src/ tests/
+```
+
+The `--check` flag will:
+- Show which files would be changed
+- Exit with code 1 if any files would change
+- Exit with code 0 if no changes are needed
+- Display timing and file statistics
+
+### Output to Stdout
+
+**Print formatted content to stdout instead of modifying files:**
+```bash
+jbang-fmt --stdout MyFile.java
+```
+
+This is useful for:
+- Piping formatted content to other tools
+- Previewing changes before applying them
+- Integration with other build tools
 
 ### Using Different Formatter Styles
 
@@ -79,7 +112,32 @@ you can also use JBang magic url fetching for arguments
 jbang-fmt --no-jbang-friendly MyFile.java
 ```
 
-TODO:
+## Output Format
 
-document how you can use jbang plugin in maven/gradle to run formatting
+The tool provides detailed feedback about the formatting process:
+
+**Normal mode output:**
+```
+Formatting with default[0 properties, jbang-friendly=false]...
+MyFile.java
+Formatted 3 files (1 changed, 2 clean, 0 skipped) in 0.2s
+```
+
+**Check mode output:**
+```
+Formatting with default[0 properties, jbang-friendly=false]...
+MyFile.java
+Would reformat 1 files (out of 3) in 0.2s. Run without --check to apply.
+```
+
+The statistics show:
+- **Total files processed:** All Java files that were examined
+- **Changed:** Files that were modified by the formatter
+- **Clean:** Files that were already properly formatted
+- **Skipped:** Non-Java files that were ignored
+- **Processing time:** How long the formatting took
+
+## TODO
+
+- Document how you can use jbang plugin in maven/gradle to run formatting
 
