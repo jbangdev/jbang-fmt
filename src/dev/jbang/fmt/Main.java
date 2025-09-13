@@ -27,11 +27,56 @@ import picocli.CommandLine.Parameters;
 @Command(name = "javafmt", mixinStandardHelpOptions = true, version = "1.0", description = "Format Java w/JBang source files using Eclipse Java formatter")
 public class Main implements Callable<Integer> {
 
+	/**
+	 * Tracks file processing statistics
+	 */
+	private static class FileStats {
+		int processed = 0;
+		int modified = 0;
+		int skipped = 0;
+
+		long startTime;
+
+		FileStats() {
+			startTime = System.nanoTime();
+		}
+
+		void addProcessed() {
+			processed++;
+		}
+
+		void addModified() {
+			modified++;
+		}
+
+		void addSkipped() {
+			skipped++;
+		}
+
+		double getElapsedSeconds() {
+			return (System.nanoTime() - startTime) / 1_000_000_000.0;
+		}
+
+		String getNormalOutput() {
+			int clean = processed - modified;
+			return String.format("Formatted %d files (%d changed, %d clean, %d skipped) in %.1fs",
+					processed, modified, clean, skipped, getElapsedSeconds());
+		}
+
+		String getCheckOutput() {
+			return String.format("Would reformat %d files (out of %d) in %.1fs. Run without --check to apply.",
+					modified, processed, getElapsedSeconds());
+		}
+	}
+
 	@Option(names = "--touch-directives", hidden = true, negatable = true, description = "Let formatter touch JBang directives", defaultValue = "false", fallbackValue = "false")
 	boolean jbangFriendly;
 
-	@Option(names = "--stdout", description = "Print formatted content to stdout instead of writing to files")
+	@Option(names = "--stdout", description = "Print formatted content to stdout")
 	private boolean stdout;
+
+	@Option(names = "--check", description = "Check if files would change. Exit 1 if any file would change.")
+	private boolean check;
 
 	@Option(names = "--settings", description = "Eclipse formatter settings file (.xml or .prefs)")
 	private Path settingsFile;
@@ -59,8 +104,19 @@ public class Main implements Callable<Integer> {
 
 			System.out.println("Formatting with " + formatter + "...");
 
-			formatFiles(sources, formatter, stdout);
-			return 0;
+			FileStats stats = new FileStats();
+			formatFiles(sources, formatter, stdout, check, stats);
+
+			// Print summary based on mode
+			if (stdout) {
+				// For stdout mode, don't print summary as it would interfere with the output
+			} else if (check) {
+				System.out.println(stats.getCheckOutput());
+			} else {
+				System.out.println(stats.getNormalOutput());
+			}
+
+			return (check && stats.modified > 0) ? 1 : 0;
 		} catch (Exception e) {
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace();
@@ -68,14 +124,16 @@ public class Main implements Callable<Integer> {
 		}
 	}
 
-	private static void formatFiles(List<Path> targets, JavaFormatter formatter, boolean stdout) throws Exception {
+	private static void formatFiles(List<Path> targets, JavaFormatter formatter, boolean stdout, boolean check,
+			FileStats stats) throws Exception {
 		for (Path path : targets) {
 			if (Files.exists(path)) {
 				if (Files.isDirectory(path)) {
-					formatDirectory(path, formatter, stdout);
+					formatDirectory(path, formatter, stdout, check, stats);
 				} else if (path.toString().endsWith(".java")) {
-					formatFile(path, formatter, stdout);
+					formatFile(path, formatter, stdout, check, stats);
 				} else {
+					stats.addSkipped();
 					//System.out.println("Skipping non-Java file: " + path);
 				}
 			} else {
@@ -84,42 +142,57 @@ public class Main implements Callable<Integer> {
 		}
 	}
 
-	private static void formatDirectory(Path dir, JavaFormatter formatter, boolean stdout) throws Exception {
+	private static void formatDirectory(Path dir, JavaFormatter formatter, boolean stdout, boolean check,
+			FileStats stats) throws Exception {
 		try (Stream<Path> paths = Files.walk(dir)) {
-			paths.filter(path -> path.toString().endsWith(".java")).forEach(path -> {
+			for (Path path : paths.filter(path -> path.toString().endsWith(".java")).toList()) {
 				try {
-					formatFile(path, formatter, stdout);
+					formatFile(path, formatter, stdout, check, stats);
 				} catch (Exception e) {
 					System.err.println("Error formatting " + path + ": " + e.getMessage());
 				}
-			});
+			}
 		}
 	}
 
-	private static void formatFile(Path file, JavaFormatter formatter, boolean stdout) throws Exception {
+	private static void formatFile(Path file, JavaFormatter formatter, boolean stdout, boolean check, FileStats stats)
+			throws Exception {
 
 		try {
-            // Read the file content
+			// Read the file content
 			String content = new String(Files.readAllBytes(file));
 
 			String formatted = formatter.format(content);
 
+			boolean fileChanged = !formatted.equals(content);
+
+			// Always count as processed
+			stats.addProcessed();
+
+			// Count as modified if it would change
+			if (fileChanged) {
+				stats.addModified();
+			}
+
 			if (stdout) {
 				// Print formatted content to stdout
 				System.out.print(formatted);
-			} else {
-				if (formatted.equals(content)) {
-					//System.out.println("No changes needed for " + file);
-					return;
+			} else if (check) {
+				// Check mode: just report if file would change
+				if (fileChanged) {
+					System.out.println(file);
 				}
-				System.out.println(file);
-
-	            // Write back the formatted content
-				Files.write(file, formatted.getBytes());
+			} else {
+				// Normal mode: write back if changed
+				if (fileChanged) {
+					System.out.println(file);
+					// Write back the formatted content
+					Files.write(file, formatted.getBytes());
+				}
 			}
 		} catch (Exception e) {
 			System.err.println("Error formatting " + file + ": " + e.getMessage());
-            // Don't rethrow, just continue with other files
+			// Don't rethrow, just continue with other files
 		}
 	}
 

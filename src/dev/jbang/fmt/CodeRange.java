@@ -24,13 +24,13 @@ public record CodeRange(int start, int end) {
 			int lineLength = line.length();
 
 			if (isJBangDirective(line) || (i == 0 && line.startsWith("//"))) {
-                // End current Java range if we were in one
+				// End current Java range if we were in one
 				if (inJavaCode) {
 					ranges.add(new CodeRange(javaStart, currentPos));
 					inJavaCode = false;
 				}
 			} else {
-                // Start Java range if we weren't in one
+				// Start Java range if we weren't in one
 				if (!inJavaCode) {
 					javaStart = currentPos;
 					inJavaCode = true;
@@ -38,13 +38,13 @@ public record CodeRange(int start, int end) {
 			}
 
 			currentPos += lineLength;
-            // Add newline character except for the last line
+			// Add newline character except for the last line
 			if (i < lines.length - 1) {
 				currentPos += 1;
 			}
 		}
 
-        // Close final Java range if we were in one
+		// Close final Java range if we were in one
 		if (inJavaCode) {
 			ranges.add(new CodeRange(javaStart, currentPos));
 		}
@@ -65,13 +65,13 @@ public record CodeRange(int start, int end) {
 			return false;
 		}
 
-        // Check if it's followed by capital letters (JBang directive pattern)
+		// Check if it's followed by capital letters (JBang directive pattern)
 		String afterComment = trimmed.substring(2).trim();
 		if (afterComment.isEmpty()) {
 			return false;
 		}
 
-        // Check if it starts with capital letters (like DEPS, JAVA_OPTIONS, etc.)
+		// Check if it starts with capital letters (like DEPS, JAVA_OPTIONS, etc.)
 		return Character.isUpperCase(afterComment.charAt(0));
 	}
 
