@@ -105,3 +105,13 @@ This design makes it easy to add new formatters in the future.
 - The tool processes files in-place (modifies the original files)
 - Non-Java files are skipped with a warning message
 - JVM module exports are automatically configured for Google formatter compatibility
+
+
+Bundled styles:
+
+- Java: Export from Eclipse settings
+- Eclipse: Export from Eclipse settings
+- Google: https://github.com/google/styleguide/blob/gh-pages/eclipse-java-google-style.xml
+- Spring: https://github.com/spring-projects/spring-framework/blob/main/src/eclipse/org.eclipse.jdt.core.prefs
+- Quarkus: https://github.com/quarkusio/quarkus/blob/main/independent-projects/ide-config/src/main/resources/eclipse-format.xml
+- JBang: https://github.com/jbangdev/jbang/blob/main/misc/eclipse_formatting_nowrap.xml
