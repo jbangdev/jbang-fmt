@@ -59,8 +59,8 @@ public class Main implements Callable<Integer> {
 
 		String getNormalOutput() {
 			int clean = processed - modified;
-			return String.format("Formatted %d files (%d changed, %d clean, %d skipped) in %.1fs",
-					processed, modified, clean, skipped, getElapsedSeconds());
+			return String.format("Formatted %d files (%d changed, %d clean, %d skipped) in %.1fs", processed, modified,
+					clean, skipped, getElapsedSeconds());
 		}
 
 		String getCheckOutput() {

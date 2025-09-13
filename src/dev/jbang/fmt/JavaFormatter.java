@@ -40,8 +40,8 @@ class JavaFormatter {
 	}
 
 	public String format(String content) throws Exception {
-		return format(content, jbangFriendly ? CodeRange.identifyJavaRanges(content)
-				: List.of(new CodeRange(0, content.length())));
+		return format(content,
+				jbangFriendly ? CodeRange.identifyJavaRanges(content) : List.of(new CodeRange(0, content.length())));
 	}
 
 	String format(String content, List<CodeRange> ranges) throws Exception {
@@ -52,8 +52,8 @@ class JavaFormatter {
 		}
 
 		CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(settings);
-		TextEdit edit = codeFormatter.format(CodeFormatter.K_COMPILATION_UNIT, content,
-				regions.toArray(new IRegion[0]), 0, null);
+		TextEdit edit = codeFormatter.format(CodeFormatter.K_COMPILATION_UNIT, content, regions.toArray(new IRegion[0]),
+				0, null);
 
 		if (edit != null) {
 			IDocument doc = new Document(content);
@@ -78,8 +78,8 @@ class JavaFormatter {
 	/**
 	 * Shared parsing logic for both file and resource streams
 	 */
-	static Map<String, String> parseSettingsFromStream(InputStream is, String fileName,
-			String sourceDescription) throws IOException {
+	static Map<String, String> parseSettingsFromStream(InputStream is, String fileName, String sourceDescription)
+			throws IOException {
 		Map<String, String> settings = new HashMap<>();
 		String lowerFileName = fileName.toLowerCase();
 
