@@ -1,117 +1,80 @@
-# Java Formatter CLI Tool
+# JBang Java Formatter (`fmt`)
 
-A command-line tool for formatting Java source files using the actual Eclipse JDT or Google Java formatters.
+This project provides a command-line tool for formatting Java source files, with special support for [JBang](https://www.jbang.dev/) scripts and common Eclipse formatter styles.
 
-## Usage
+## Why does this exist?
 
-```bash
-# Format a single file
-jbang src/fmt.java --eclipse MyFile.java
-jbang src/fmt.java --google MyFile.java
+Most Java code formatters (including Eclipse, Google Java Format, etc.) do not handle JBang script files well. JBang scripts often start with special comment-based directives (like `//DEPS`, `//JAVA`, etc.) that are standard Java syntax, but standard formatters may reformat, move, or even delete these directives, breaking the script or making it unreadable.
 
-# Format all Java files in a directory
-jbang src/fmt.java --eclipse src/
-jbang src/fmt.java --google src/
-
-# Format multiple files and directories
-jbang src/fmt.java --eclipse file1.java file2.java dir1/ dir2/
-
-# Show help
-jbang src/fmt.java --help
-```
-
-## Formatters
-
-### Eclipse Formatter (`--eclipse`)
-- Uses the real Eclipse JDT formatter
-- Follows Eclipse Java formatting conventions
-- Uses tabs for indentation by default
-- Full Eclipse formatting rules applied
-
-### Google Formatter (`--google`)
-- Uses the real Google Java Format library
-- Follows Google Java Style Guide conventions
-- Uses 2-space indentation
-- Full Google formatting rules applied
-
-## Requirements
-
-- Java 11 or higher
-- JBang (for running the script)
-
-## Installation
-
-No installation required! Just run with JBang:
-
-```bash
-jbang src/fmt.java --help
-```
-
-## Examples
-
-### Before formatting:
-```java
-public class Test{public static void main(String[]args){System.out.println("Hello");}}
-```
-
-### After Eclipse formatting:
-```java
-public class Test {
-    public static void main(String[] args) {
-        System.out.println("Hello");
-    }
-}
-```
-
-### After Google formatting:
-```java
-public class Test {
-  public static void main(String[] args) {
-    System.out.println("Hello");
-  }
-}
-```
+This tool was created to solve that problem: it **formats Java code while leaving JBang directives untouched**. It is especially useful for developers who want to keep their JBang scripts clean and consistently formatted, without risking the loss or corruption of important script metadata. 
 
 ## Features
 
-- **Interface-Based Design**: Clean separation with `JavaFormatter` interface and concrete implementations
-- **Real Formatters**: Uses actual Eclipse JDT and Google Java Format libraries
-- **Picocli Integration**: Professional command-line interface with help and validation
-- **Mutual Exclusivity**: Eclipse and Google options are mutually exclusive (enforced by picocli)
-- **JVM Module Support**: Includes necessary JVM options for Google formatter compatibility
-- **Directory Processing**: Recursively processes all Java files in directories
-- **Error Handling**: Graceful error handling with informative messages
+- **JBang-friendly formatting:** By default, the tool detects and protects JBang directives, only formatting the actual true Java code and comments.
+- **Eclipse formatter support:** Uses the Eclipse Java code formatter under the hood, with the ability to load custom Eclipse `.xml` or `.prefs` style settings.
+- **Easy to use:** Simple CLI interface, works with files and directories, and can be run via [JBang](https://www.jbang.dev/).
+- **Customizable:** Supports toggling JBang-friendly mode and specifying custom formatter settings.
 
-## Architecture
+## Usage
 
-The tool uses a clean interface-based design:
+You can install (and run) the tool using JBang:
 
-- **`JavaFormatter`**: Base interface with `format(String)` and `getName()` methods
-- **`EclipseJavaFormatter`**: Implements Eclipse JDT formatting
-- **`GoogleJavaFormatter`**: Implements Google Java Format formatting
-- **Unified Processing**: Single `formatFiles()` method works with any formatter implementation
+```bash
+jbang app install javafmt@jbangdev/jbang-fmt
+```
 
-This design makes it easy to add new formatters in the future.
+### Basic Examples
 
-## Dependencies
+**Format a single Java file:**
+```bash
+javafmt MyFile.java
+```
 
-- Eclipse JDT Core (org.eclipse.jdt:org.eclipse.jdt.core:3.37.0)
-- Google Java Format (com.google.googlejavaformat:google-java-format:1.17.0)
-- Eclipse JFace Text (org.eclipse.platform:org.eclipse.jface.text:3.28.0)
-- Picocli (info.picocli:picocli:4.7.5)
+**Format all Java files in a directory:**
+```bash
+javafmt src/
+```
 
-## Notes
+**Format multiple files and directories:**
+```bash
+javafmt MyFile.java src/ tests/
+```
 
-- The tool processes files in-place (modifies the original files)
-- Non-Java files are skipped with a warning message
-- JVM module exports are automatically configured for Google formatter compatibility
+### Using Different Formatter Styles
+
+**Use Google Java Format style:**
+```bash
+javafmt --settings google MyFile.java
+```
+
+The following styles are default bundled:
+
+- `eclipse` &mdash; Eclipse default Java formatter (Eclipse IDE style)
+- `google` &mdash; Google Java Style Guide
+- `java` &mdash; Java community style (OpenJDK-inspired)
+- `jbang` &mdash; JBang's recommended style
+- `quarkus` &mdash; Quarkus project style
+- `spring` &mdash; Spring Framework style
 
 
-Bundled styles:
+**Use custom Eclipse settings file:**
+```bash
+javafmt --settings /path/to/my-formatter.xml MyFile.java
+```
 
-- Java: Export from Eclipse settings
-- Eclipse: Export from Eclipse settings
-- Google: https://github.com/google/styleguide/blob/gh-pages/eclipse-java-google-style.xml
-- Spring: https://github.com/spring-projects/spring-framework/blob/main/src/eclipse/org.eclipse.jdt.core.prefs
-- Quarkus: https://github.com/quarkusio/quarkus/blob/main/independent-projects/ide-config/src/main/resources/eclipse-format.xml
-- JBang: https://github.com/jbangdev/jbang/blob/main/misc/eclipse_formatting_nowrap.xml
+you can also use JBang magic url fetching for arguments
+
+
+
+### JBang-Friendly Mode (Default)
+
+**Disable JBang-friendly mode (format everything including directives):**
+
+```bash
+jbang src/dev/jbang/fmt/fmt.java --no-jbang-friendly MyFile.java
+```
+
+TODO:
+
+document how you can use jbang plugin in maven/gradle to run formatting
+

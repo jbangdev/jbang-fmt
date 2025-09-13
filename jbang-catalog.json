@@ -1,0 +1,10 @@
+{
+  "catalogs": {},
+  "aliases": {
+    "javafmt": {
+      "script-ref": "src/dev/jbang/fmt/javafmt.java",
+      "java-agents": []
+    }
+  },
+  "templates": {}
+}
