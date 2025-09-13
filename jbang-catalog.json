@@ -1,10 +1,8 @@
 {
   "catalogs": {},
   "aliases": {
-    "javafmt": {
-      "script-ref": "src/dev/jbang/fmt/javafmt.java",
-      "java-agents": []
+    "j!fmt": {
+      "script-ref": "src/dev/jbang/fmt/javafmt.java"
     }
-  },
-  "templates": {}
+  }
 }
