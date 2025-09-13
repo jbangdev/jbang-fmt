@@ -34,7 +34,7 @@ public class fmtTest {
 
     @ParameterizedTest
     @MethodSource("formatters")
-    public void testEclipseFormatter(JavaFormatter formatter) throws Exception {
+    public void testBasicHelloWorld(JavaFormatter formatter) throws Exception {
       String input = """
         public class TestClass{public static void main(String[]args){System.out.println("Hello");}}
         """;
@@ -86,12 +86,16 @@ public class fmtTest {
         public class TestClass{public static void main(String[]args){System.out.println("Hello");}}
         """;
         String result = formatter.format(input);
-        assertEquals(input, result);
+        
         //verify that the result is still a valid jbang directive
         assertTrue(result.startsWith("///usr/bin/env jbang \"$0\" \"$@\" ; exit $?"));
         assertTrue(result.contains("//DEPS org.junit.jupiter:junit-jupiter-engine:5.12.2"));
         assertTrue(result.contains("//DEPS org.junit.jupiter:junit-jupiter-params:5.12.2"));
         assertTrue(result.contains("//DEPS org.junit.platform:junit-platform-console:1.12.2"));
+        
+        // Verify Java code is formatted (should not be the same as input)
+        assertNotEquals(input, result);
+        assertTrue(result.contains("public class TestClass {"));
     }
 
     // Scan the system classpath for tests
