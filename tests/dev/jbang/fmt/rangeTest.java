@@ -4,7 +4,7 @@
 //DEPS org.junit.platform:junit-platform-console:1.12.2
 //DEPS org.assertj:assertj-core:3.25.1
 
-//SOURCES javafmt.java
+//SOURCES ../../../../src/**/*.java
 
 package dev.jbang.fmt;
 
@@ -17,6 +17,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.console.ConsoleLauncher;
 
+import dev.jbang.fmt.javafmt;
 import dev.jbang.fmt.javafmt.CodeRange;
 import dev.jbang.fmt.javafmt.JBangDirectiveHandler;
 

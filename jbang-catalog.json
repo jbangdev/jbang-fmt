@@ -2,7 +2,7 @@
   "catalogs": {},
   "aliases": {
     "jbang-fmt": {
-      "script-ref": "src/dev/jbang/fmt/javafmt.java"
+      "script-ref": "src/dev/jbang/fmt/Main.java"
     }
   }
 }

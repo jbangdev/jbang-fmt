@@ -4,7 +4,7 @@
 //DEPS org.junit.platform:junit-platform-console:1.12.2
 //DEPS org.assertj:assertj-core:3.25.1
 
-//SOURCES javafmt.java
+//SOURCES ../../../../src/**/*.java
 
 package dev.jbang.fmt;
 
@@ -25,7 +25,7 @@ import dev.jbang.fmt.javafmt.JavaFormatter;
 public class fmtTest {
 
 	private static Stream<JavaFormatter> formatters() {
-		return Stream.of(new javafmt.EclipseJavaFormatter("test", null, true));
+		return Stream.of(new EclipseJavaFormatter("test", null, true));
 	}
 
 	@ParameterizedTest
