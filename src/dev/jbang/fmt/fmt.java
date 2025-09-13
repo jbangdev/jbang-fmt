@@ -1,13 +1,8 @@
 ///usr/bin/env jbang "$0" "$@" ; exit $?
 //JAVA 21+
 //DEPS org.eclipse.jdt:org.eclipse.jdt.core:3.37.0
-//DEPS com.google.googlejavaformat:google-java-format:1.17.0
 //DEPS org.eclipse.platform:org.eclipse.jface.text:3.28.0
 //DEPS info.picocli:picocli:4.7.5
-//JAVA_OPTIONS --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
-//JAVA_OPTIONS --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
-//JAVA_OPTIONS --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
-//JAVA_OPTIONS --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
 
 package dev.jbang.fmt;
 
@@ -16,9 +11,6 @@ import java.util.*;
 import java.util.stream.*;
 import java.util.concurrent.Callable;
 
-import com.google.googlejavaformat.java.Formatter;
-import com.google.googlejavaformat.java.FormatterException;
-import com.google.common.collect.Range;
 import org.eclipse.jdt.core.ToolFactory;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
 import org.eclipse.jface.text.Document;
@@ -33,155 +25,40 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ArgGroup;
 
 /**
- * Utility class for handling JBang directives and identifying Java code ranges
+ * Java formatter CLI tool supporting Eclipse and Google Java formatters.
  */
-class JBangDirectiveHandler {
-    
-    /**
-     * Identifies character ranges that contain Java code (excluding JBang directives)
-     */
-    public static List<CodeRange> identifyJavaRanges(String content) {
-        List<CodeRange> ranges = new ArrayList<>();
-        String[] lines = content.split("\n", -1);
-        
-        int currentPos = 0;
-        boolean inJavaCode = false;
-        int javaStart = 0;
-        
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i];
-            int lineLength = line.length();
-            
-            if (isJBangDirective(line)) {
-                // End current Java range if we were in one
-                if (inJavaCode) {
-                    ranges.add(new CodeRange(javaStart, currentPos, true));
-                    inJavaCode = false;
-                }
-            } else {
-                // Start Java range if we weren't in one
-                if (!inJavaCode) {
-                    javaStart = currentPos;
-                    inJavaCode = true;
-                }
-            }
-            
-            currentPos += lineLength;
-            // Add newline character except for the last line
-            if (i < lines.length - 1) {
-                currentPos += 1;
-            }
-        }
-        
-        // Close final Java range if we were in one
-        if (inJavaCode) {
-            ranges.add(new CodeRange(javaStart, currentPos, true));
-        }
-        
-        return ranges;
-    }
-    
-    /**
-     * Checks if a line is a JBang directive
-     */
-    private static boolean isJBangDirective(String line) {
-        if (line == null || line.trim().isEmpty()) {
-            return false;
-        }
-        
-        String trimmed = line.trim();
-        if (!trimmed.startsWith("//")) {
-            return false;
-        }
-        
-        // Check if it's followed by capital letters (JBang directive pattern)
-        String afterComment = trimmed.substring(2).trim();
-        if (afterComment.isEmpty()) {
-            return false;
-        }
-        
-        // Check if it starts with capital letters (like DEPS, JAVA_OPTIONS, etc.)
-        return Character.isUpperCase(afterComment.charAt(0));
-    }
-    
-    /**
-     * Data class to represent a range of code
-     */
-    public static class CodeRange {
-        public final int start;
-        public final int end;
-        public final boolean isJava;
-        
-        public CodeRange(int start, int end, boolean isJava) {
-            this.start = start;
-            this.end = end;
-            this.isJava = isJava;
-        }
-    }
-}
-
-/**
- * Interface for Java formatters
- */
-interface JavaFormatter {
-    String format(String content) throws Exception;
-    String format(String content, List<JBangDirectiveHandler.CodeRange> ranges) throws Exception;
-    String getName();
-}
+@Command(name = "fmt", mixinStandardHelpOptions = true, version = "1.0", description = "Format Java w/JBang source files using EclipseJava formatters")
+public class fmt implements Callable<Integer> {
 
 /**
  * Eclipse Java formatter implementation
  */
-class EclipseJavaFormatter implements JavaFormatter {
+static class EclipseJavaFormatter implements JavaFormatter
+    {
+
     @Override
     public String format(String content) throws Exception {
-        CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(null);
-        TextEdit edit = codeFormatter.format(
-            CodeFormatter.K_COMPILATION_UNIT, 
-            content, 
-            0, 
-            content.length(), 
-            0, 
-            null
-        );
-        
-        if (edit != null) {
-            IDocument doc = new Document(content);
-            edit.apply(doc);
-            return doc.get();
-        } else {
-            System.err.println("Warning: Eclipse formatter could not format the content");
-            return content;
-        }
+        return format(content, JBangDirectiveHandler.identifyJavaRanges(content));
     }
-    
+
     @Override
-    public String format(String content, List<JBangDirectiveHandler.CodeRange> ranges) throws Exception {
-        if (ranges.isEmpty()) {
-            return format(content);
-        }
-        
+    public String format(String content, List<CodeRange> ranges) throws Exception {
+        System.err.println(content + "\n Ranges: " + ranges);
+
         // Convert CodeRange objects to IRegion array
         List<IRegion> regions = new ArrayList<>();
-        for (JBangDirectiveHandler.CodeRange range : ranges) {
-            if (range.isJava) {
-                regions.add(new Region(range.start, range.end - range.start));
-            }
+        for (CodeRange range : ranges) {
+                regions.add(new Region(range.start(), range.end() - range.start()));
         }
-        
-        if (regions.isEmpty()) {
-            return content;
-        }
-        
+
         CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(null);
         TextEdit edit = codeFormatter.format(
-            CodeFormatter.K_COMPILATION_UNIT, 
-            content, 
-            regions.toArray(new IRegion[0]), 
-            0, 
-            null
-        );
-        
+                CodeFormatter.K_COMPILATION_UNIT,
+                content,
+                regions.toArray(new IRegion[0]),
+                0,
+                null);
+
         if (edit != null) {
             IDocument doc = new Document(content);
             edit.apply(doc);
@@ -191,7 +68,7 @@ class EclipseJavaFormatter implements JavaFormatter {
             return content;
         }
     }
-    
+
     @Override
     public String getName() {
         return "Eclipse";
@@ -204,75 +81,92 @@ class EclipseJavaFormatter implements JavaFormatter {
 }
 
 /**
- * Google Java formatter implementation
+ * Utility class for handling JBang directives and identifying Java code ranges
  */
-class GoogleJavaFormatter implements JavaFormatter {
-    @Override
-    public String format(String content) throws Exception {
-            return format(content, JBangDirectiveHandler.identifyJavaRanges(content));
-    }
-    
-    @Override
-    public String format(String content, List<JBangDirectiveHandler.CodeRange> ranges) throws Exception {
-        if (ranges.isEmpty()) {
-            return format(content);
-        }
-        
-        try {
-            Formatter formatter = new Formatter();
-            
-            // Convert CodeRange objects to Google's Range<Integer> collection
-            Collection<Range<Integer>> googleRanges = new ArrayList<>();
-            for (JBangDirectiveHandler.CodeRange range : ranges) {
-                if (range.isJava) {
-                    googleRanges.add(Range.closedOpen(range.start, range.end));
+static class JBangDirectiveHandler {
+
+    /**
+     * Identifies character ranges that contain Java code (excluding JBang
+     * directives)
+     */
+    public static List<CodeRange> identifyJavaRanges(String content) {
+        List<CodeRange> ranges = new ArrayList<>();
+        String[] lines = content.split("\n", -1);
+
+        int currentPos = 0;
+        boolean inJavaCode = false;
+        int javaStart = 0;
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            int lineLength = line.length();
+
+            if (isJBangDirective(line) || (i==0 && line.startsWith("//"))) {
+                // End current Java range if we were in one
+                if (inJavaCode) {
+                    ranges.add(new CodeRange(javaStart, currentPos));
+                    inJavaCode = false;
+                }
+            } else {
+                // Start Java range if we weren't in one
+                if (!inJavaCode) {
+                    javaStart = currentPos;
+                    inJavaCode = true;
                 }
             }
-            
-            if (googleRanges.isEmpty()) {
-                return content;
+
+            currentPos += lineLength;
+            // Add newline character except for the last line
+            if (i < lines.length - 1) {
+                currentPos += 1;
             }
-            
-            // Use Google formatter's range-based API
-            return formatter.formatSource(content, googleRanges);
-        } catch (FormatterException e) {
-            System.err.println("Google formatter error: " + e.getMessage());
-            return content; // Return original content if formatting fails
         }
-    }
-    
-    @Override
-    public String getName() {
-        return "Google";
-    }   
 
-    @Override
-    public String toString() {
-        return "GoogleJavaFormatter";
+        // Close final Java range if we were in one
+        if (inJavaCode) {
+            ranges.add(new CodeRange(javaStart, currentPos));
+        }
+
+        return ranges;
     }
+
+    /**
+     * Checks if a line is a JBang directive
+     */
+    static boolean isJBangDirective(String line) {
+        if (line == null || line.trim().isEmpty()) {
+            return false;
+        }
+
+        String trimmed = line.trim();
+        if (!trimmed.startsWith("//")) {
+            return false;
+        }
+
+        // Check if it's followed by capital letters (JBang directive pattern)
+        String afterComment = trimmed.substring(2).trim();
+        if (afterComment.isEmpty()) {
+            return false;
+        }
+
+        // Check if it starts with capital letters (like DEPS, JAVA_OPTIONS, etc.)
+        return Character.isUpperCase(afterComment.charAt(0));
+    }
+
+}
+
+static record CodeRange(int start, int end) {
 }
 
 /**
- * Option group for mutually exclusive formatter selection
+ * Interface for Java formatters
  */
-class FormatterGroup {
-    @Option(names = "--eclipse", description = "Use Eclipse Java formatter")
-    boolean useEclipse;
-    
-    @Option(names = "--google", description = "Use Google Java formatter")
-    boolean useGoogle;
+interface JavaFormatter {
+    String format(String content) throws Exception;
+    String format(String content, List<CodeRange> ranges) throws Exception;
+    String getName();
 }
 
-/**
- * Java formatter CLI tool supporting Eclipse and Google Java formatters.
- */
-@Command(name = "fmt", mixinStandardHelpOptions = true, version = "1.0",
-         description = "Format Java source files using Eclipse or Google Java formatters")
-public class fmt implements Callable<Integer> {
-    
-    @ArgGroup(exclusive = true, multiplicity = "1")
-    FormatterGroup formatterGroup;
-    
     @Parameters(description = "Java files or directories to format", arity = "1..*")
     private List<Path> sources;
     
@@ -285,8 +179,7 @@ public class fmt implements Callable<Integer> {
     public Integer call() throws Exception {
         
         try {
-            JavaFormatter formatter = formatterGroup.useEclipse ? 
-                new EclipseJavaFormatter() : new GoogleJavaFormatter();
+            JavaFormatter formatter = new EclipseJavaFormatter();
             formatFiles(sources, formatter);
             return 0;
         } catch (Exception e) {
@@ -334,7 +227,9 @@ public class fmt implements Callable<Integer> {
             // Read the file content
             String content = new String(Files.readAllBytes(file));
                         
-            String formatted = formatter.format(content);
+            List<CodeRange> ranges = JBangDirectiveHandler.identifyJavaRanges(content);
+
+            String formatted = formatter.format(content, ranges);
             
             // Write back the formatted content
             Files.write(file, formatted.getBytes());
