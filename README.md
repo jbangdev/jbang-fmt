@@ -66,6 +66,79 @@ The `--check` flag will:
 - Exit with code 0 if no changes are needed
 - Display timing and file statistics
 
+### Output to Stdout
+
+**Print formatted content to stdout instead of modifying files:**
+```bash
+jbang-fmt --stdout MyFile.java
+```
+
+This is useful for:
+- Piping formatted content to other tools
+- Previewing changes before applying them
+- Integration with other build tools
+
+### Using Different Formatter Styles
+
+**Use Google Java Format style:**
+```bash
+jbang-fmt --settings google MyFile.java
+```
+
+The following styles are default bundled:
+
+- `eclipse` &mdash; Eclipse default Java formatter (Eclipse IDE style)
+- `google` &mdash; Google Java Style Guide
+- `java` &mdash; Java community style (OpenJDK-inspired)
+- `jbang` &mdash; JBang's recommended style
+- `quarkus` &mdash; Quarkus project style
+- `spring` &mdash; Spring Framework style
+
+
+**Use custom Eclipse settings file:**
+```bash
+jbang-fmt --settings /path/to/my-formatter.xml MyFile.java
+```
+
+you can also use JBang magic url fetching for arguments
+
+
+
+### Touch Directives
+
+If you want to have JBang directives formatted as all other java code then run with `--touch-directives`.
+
+```bash
+jbang-fmt --touch-directives MyFile.java
+```
+
+### Output Format
+
+The tool provides detailed feedback about the formatting process:
+
+**Normal mode output:**
+```
+Formatting with default[0 properties, jbang-friendly=false]...
+MyFile.java
+Formatted 3 files (1 changed, 2 clean, 0 skipped) in 0.2s
+```
+
+**Check mode output:**
+```
+Formatting with default[0 properties, jbang-friendly=false]...
+MyFile.java
+Would reformat 1 files (out of 3) in 0.2s. Run without --check to apply.
+```
+
+The statistics show:
+- **Total files processed:** All Java files that were examined
+- **Changed:** Files that were modified by the formatter
+- **Clean:** Files that were already properly formatted
+- **Skipped:** Non-Java files that were ignored
+- **Processing time:** How long the formatting took
+
+## Usecases
+
 ### Git Integration
 
 **Format only changed Java files in a git commit hook:**
@@ -117,77 +190,6 @@ fi
 ```bash
 chmod +x .git/hooks/pre-commit
 ```
-
-### Output to Stdout
-
-**Print formatted content to stdout instead of modifying files:**
-```bash
-jbang-fmt --stdout MyFile.java
-```
-
-This is useful for:
-- Piping formatted content to other tools
-- Previewing changes before applying them
-- Integration with other build tools
-
-### Using Different Formatter Styles
-
-**Use Google Java Format style:**
-```bash
-jbang-fmt --settings google MyFile.java
-```
-
-The following styles are default bundled:
-
-- `eclipse` &mdash; Eclipse default Java formatter (Eclipse IDE style)
-- `google` &mdash; Google Java Style Guide
-- `java` &mdash; Java community style (OpenJDK-inspired)
-- `jbang` &mdash; JBang's recommended style
-- `quarkus` &mdash; Quarkus project style
-- `spring` &mdash; Spring Framework style
-
-
-**Use custom Eclipse settings file:**
-```bash
-jbang-fmt --settings /path/to/my-formatter.xml MyFile.java
-```
-
-you can also use JBang magic url fetching for arguments
-
-
-
-### JBang-Friendly Mode (Default)
-
-**Disable JBang-friendly mode (format everything including directives):**
-
-```bash
-jbang-fmt --no-jbang-friendly MyFile.java
-```
-
-## Output Format
-
-The tool provides detailed feedback about the formatting process:
-
-**Normal mode output:**
-```
-Formatting with default[0 properties, jbang-friendly=false]...
-MyFile.java
-Formatted 3 files (1 changed, 2 clean, 0 skipped) in 0.2s
-```
-
-**Check mode output:**
-```
-Formatting with default[0 properties, jbang-friendly=false]...
-MyFile.java
-Would reformat 1 files (out of 3) in 0.2s. Run without --check to apply.
-```
-
-The statistics show:
-- **Total files processed:** All Java files that were examined
-- **Changed:** Files that were modified by the formatter
-- **Clean:** Files that were already properly formatted
-- **Skipped:** Non-Java files that were ignored
-- **Processing time:** How long the formatting took
 
 ## TODO
 
