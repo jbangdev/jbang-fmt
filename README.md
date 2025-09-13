@@ -1,4 +1,9 @@
-# JBang Java Formatter (`fmt`)
+# JBang Java Formatter (`javafmt`)
+
+> **⚠️ Experimental:**  
+> This formatter is experimental and under active development.  
+> Please report issues or suggestions on [GitHub](https://github.com/jbangdev/jbang-fmt).
+
 
 This project provides a command-line tool for formatting Java source files, with special support for [JBang](https://www.jbang.dev/) scripts and common Eclipse formatter styles.
 
