@@ -27,8 +27,11 @@ import picocli.CommandLine.Parameters;
 @Command(name = "javafmt", mixinStandardHelpOptions = true, version = "1.0", description = "Format Java w/JBang source files using Eclipse Java formatter")
 public class Main implements Callable<Integer> {
 
-	@Option(names = "--jbang-friendly", hidden = true, negatable = true, description = "Use JBang friendly formatter settings (protects JBang directives)", defaultValue = "true", fallbackValue = "true")
+	@Option(names = "--touch-directives", hidden = true, negatable = true, description = "Let formatter touch JBang directives", defaultValue = "false", fallbackValue = "false")
 	boolean jbangFriendly;
+
+	@Option(names = "--stdout", description = "Print formatted content to stdout instead of writing to files")
+	private boolean stdout;
 
 	@Option(names = "--settings", description = "Eclipse formatter settings file (.xml or .prefs)")
 	private Path settingsFile;
@@ -56,7 +59,7 @@ public class Main implements Callable<Integer> {
 
 			System.out.println("Formatting with " + formatter + "...");
 
-			formatFiles(sources, formatter);
+			formatFiles(sources, formatter, stdout);
 			return 0;
 		} catch (Exception e) {
 			System.err.println("Error: " + e.getMessage());
@@ -65,13 +68,13 @@ public class Main implements Callable<Integer> {
 		}
 	}
 
-	private static void formatFiles(List<Path> targets, JavaFormatter formatter) throws Exception {
+	private static void formatFiles(List<Path> targets, JavaFormatter formatter, boolean stdout) throws Exception {
 		for (Path path : targets) {
 			if (Files.exists(path)) {
 				if (Files.isDirectory(path)) {
-					formatDirectory(path, formatter);
+					formatDirectory(path, formatter, stdout);
 				} else if (path.toString().endsWith(".java")) {
-					formatFile(path, formatter);
+					formatFile(path, formatter, stdout);
 				} else {
 					//System.out.println("Skipping non-Java file: " + path);
 				}
@@ -81,11 +84,11 @@ public class Main implements Callable<Integer> {
 		}
 	}
 
-	private static void formatDirectory(Path dir, JavaFormatter formatter) throws Exception {
+	private static void formatDirectory(Path dir, JavaFormatter formatter, boolean stdout) throws Exception {
 		try (Stream<Path> paths = Files.walk(dir)) {
 			paths.filter(path -> path.toString().endsWith(".java")).forEach(path -> {
 				try {
-					formatFile(path, formatter);
+					formatFile(path, formatter, stdout);
 				} catch (Exception e) {
 					System.err.println("Error formatting " + path + ": " + e.getMessage());
 				}
@@ -93,7 +96,7 @@ public class Main implements Callable<Integer> {
 		}
 	}
 
-	private static void formatFile(Path file, JavaFormatter formatter) throws Exception {
+	private static void formatFile(Path file, JavaFormatter formatter, boolean stdout) throws Exception {
 
 		try {
             // Read the file content
@@ -101,14 +104,19 @@ public class Main implements Callable<Integer> {
 
 			String formatted = formatter.format(content);
 
-			if (formatted.equals(content)) {
-				//System.out.println("No changes needed for " + file);
-				return;
-			}
-			System.out.println(file);
+			if (stdout) {
+				// Print formatted content to stdout
+				System.out.print(formatted);
+			} else {
+				if (formatted.equals(content)) {
+					//System.out.println("No changes needed for " + file);
+					return;
+				}
+				System.out.println(file);
 
-            // Write back the formatted content
-			Files.write(file, formatted.getBytes());
+	            // Write back the formatted content
+				Files.write(file, formatted.getBytes());
+			}
 		} catch (Exception e) {
 			System.err.println("Error formatting " + file + ": " + e.getMessage());
             // Don't rethrow, just continue with other files
