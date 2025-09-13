@@ -1,4 +1,4 @@
-# JBang Java Formatter (`j!fmt`)
+# JBang Java Formatter (`jbang-fmt`)
 
 > **⚠️ Experimental:**  
 > This formatter is experimental and under active development.  
@@ -25,31 +25,31 @@ This tool was created to solve that problem: it **formats Java code while leavin
 You can install (and run) the tool using JBang:
 
 ```bash
-jbang app install j!fmt@jbangdev/jbang-fmt
+jbang app install jbang-fmt@jbangdev/jbang-fmt
 ```
 
 ### Basic Examples
 
 **Format a single Java file:**
 ```bash
-j!fmt MyFile.java
+jbang-fmt MyFile.java
 ```
 
 **Format all Java files in a directory:**
 ```bash
-j!fmt src/
+jbang-fmt src/
 ```
 
 **Format multiple files and directories:**
 ```bash
-j!fmt MyFile.java src/ tests/
+jbang-fmt MyFile.java src/ tests/
 ```
 
 ### Using Different Formatter Styles
 
 **Use Google Java Format style:**
 ```bash
-j!fmt --settings google MyFile.java
+jbang-fmt --settings google MyFile.java
 ```
 
 The following styles are default bundled:
@@ -64,7 +64,7 @@ The following styles are default bundled:
 
 **Use custom Eclipse settings file:**
 ```bash
-j!fmt --settings /path/to/my-formatter.xml MyFile.java
+jbang-fmt --settings /path/to/my-formatter.xml MyFile.java
 ```
 
 you can also use JBang magic url fetching for arguments
@@ -76,7 +76,7 @@ you can also use JBang magic url fetching for arguments
 **Disable JBang-friendly mode (format everything including directives):**
 
 ```bash
-jbang src/dev/jbang/fmt/fmt.java --no-jbang-friendly MyFile.java
+jbang-fmt --no-jbang-friendly MyFile.java
 ```
 
 TODO:

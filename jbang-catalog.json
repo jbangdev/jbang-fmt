@@ -1,7 +1,7 @@
 {
   "catalogs": {},
   "aliases": {
-    "j!fmt": {
+    "jbang-fmt": {
       "script-ref": "src/dev/jbang/fmt/javafmt.java"
     }
   }
