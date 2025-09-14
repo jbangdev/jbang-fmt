@@ -34,7 +34,7 @@ You can install (and run) the tool using JBang:
 
 [source,bash]
 ----
-jbang app install jbang-fmt@jbangdev/jbang-fmt
+jbang app install jbang-fmt@jbangdev
 ----
 
 === Basic Examples
