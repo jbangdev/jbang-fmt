@@ -98,20 +98,29 @@ jbang-fmt --style google MyFile.java
 
 The following styles are default bundled:
 
+* `jbang` — JBang's project style (default)
 * `eclipse` — Eclipse default Java formatter (Eclipse IDE style)
 * `google` — Google Java Style Guide
 * `java` — Java community style (OpenJDK-inspired)
-* `jbang` — JBang's recommended style (default)
 * `quarkus` — Quarkus project style
 * `spring` — Spring Framework style
 
 **Use custom Eclipse settings file:**
+
+If you want to be sure to have a specfifc style you should use the `--style` option with your version controlled Eclipse settings file.
+
 [source,bash]
 ----
 jbang-fmt --style /path/to/my-formatter.xml MyFile.java
 ----
 
 You can also use JBang magic URL fetching for arguments.
+
+[source,bash]
+----
+jbang jbang-fmt --style %{https://raw.githubusercontent.com/jbangdev/jbang-
+fmt/refs/heads/main/src/quarkus.xml} --check .
+----
 
 === Advanced Configuration
 
@@ -133,19 +142,16 @@ jbang-fmt --line-length 120 MyFile.java
 jbang-fmt --java 17 MyFile.java
 ----
 
-**Combine multiple options:**
-[source,bash]
-----
-jbang-fmt --style google --line-length 100 --java 21 MyFile.java
-----
-
 === Touch Directives
 
-If you want to have JBang directives formatted as all other java code then run with `--touch-directives`.
+If you want to have JBang directives formatted as all other java code then run with `--touch-jbang`.
+With this option `jbang-fmt` should work exactly as any other Eclipse formatter.
+
+Below example shows how to use `--touch-jbang` with the `google` style which by default formats Java header comments which will break the JBang directives. The main reason why `jbang-fmt` exists is to avoid this.
 
 [source,bash]
 ----
-jbang-fmt --touch-directives MyFile.java
+jbang-fmt --touch-directives --style google MyFile.java
 ----
 
 === Output Format
@@ -163,7 +169,7 @@ Formatted 3 files (1 changed, 2 clean, 0 skipped) in 0.2s
 **Check mode output:**
 [source,text]
 ----
-Formatting with default[0 properties, jbang-friendly=false]...
+Formatting with default[0 properties, touchJBang=false]...
 MyFile.java
 Would reformat 1 files (out of 3) in 0.2s. Run without --check to apply.
 ----

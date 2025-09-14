@@ -30,18 +30,18 @@ import org.w3c.dom.NodeList;
 class JavaFormatter {
 
 	private final Map<String, String> settings;
-	private final boolean jbangFriendly;
+	private final boolean touchJBang;
 	private String settingsName;
 
-	public JavaFormatter(String settingsName, Map<String, String> settings, boolean jbangFriendly) {
+	public JavaFormatter(String settingsName, Map<String, String> settings, boolean touchJBang) {
 		this.settings = settings;
-		this.jbangFriendly = jbangFriendly;
+		this.touchJBang = touchJBang;
 		this.settingsName = settingsName;
 	}
 
 	public String format(String content) throws Exception {
 		return format(content,
-				jbangFriendly ? CodeRange.identifyJavaRanges(content) : List.of(new CodeRange(0, content.length())));
+				!touchJBang ? CodeRange.identifyJavaRanges(content) : List.of(new CodeRange(0, content.length())));
 	}
 
 	String format(String content, List<CodeRange> ranges) throws Exception {
@@ -51,7 +51,7 @@ class JavaFormatter {
 			regions.add(new Region(range.start(), range.end() - range.start()));
 		}
 
-		CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(settings,ToolFactory.M_FORMAT_EXISTING);
+		CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(settings, ToolFactory.M_FORMAT_EXISTING);
 		TextEdit edit = codeFormatter.format(CodeFormatter.K_COMPILATION_UNIT, content, regions.toArray(new IRegion[0]),
 				0, null);
 
@@ -71,8 +71,8 @@ class JavaFormatter {
 
 	@Override
 	public String toString() {
-		return settingsName + "[" + (settings == null ? 0 : settings.size()) + " properties, jbang-friendly="
-				+ jbangFriendly + "]";
+		return settingsName + "[" + (settings == null ? 0 : settings.size()) + " properties, touchJBang="
+				+ touchJBang + "]";
 	}
 
 	/**
