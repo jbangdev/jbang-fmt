@@ -503,3 +503,7 @@ task checkFormat(type: dev.jbang.gradle.JbangTask) {
 compileJava.dependsOn checkFormat
 ----
 
+## TODO
+
+Probably should make this a published jar on maven central and/or github release, jrelease etc....but for now
+just use it via JBang :)
