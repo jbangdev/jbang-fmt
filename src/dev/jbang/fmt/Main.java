@@ -36,7 +36,7 @@ import picocli.CommandLine.UnmatchedArgumentException;
 /**
  * Java formatter CLI tool supporting Eclipse and Google Java formatters.
  */
-@Command(name = "javafmt", mixinStandardHelpOptions = true, version = "1.0", description = "Format Java w/JBang source files using Eclipse Java formatter")
+@Command(name = "javafmt", mixinStandardHelpOptions = true, showAtFileInUsageHelp = true, version = "1.0", description = "Format Java w/JBang source files using Eclipse Java formatter")
 public class Main implements Callable<Integer> {
 
 	static class ShortErrorMessageHandler implements IParameterExceptionHandler {
@@ -143,7 +143,8 @@ public class Main implements Callable<Integer> {
 		@Option(names = "--java", description = "Override the java version in formatter (8, 11, 17, 21, etc.)")
 		private Optional<String> javaVersion;
 
-		@Option(names = "--settings", description = "Override of matter settings file (key=value)", converter = CommaSeparatedConverter.class)
+		@Option(names = { "--settings",
+				"-S" }, description = "Override of settings by key. Can be used multiple times or use comma separated list.", converter = CommaSeparatedConverter.class)
 		private List<String> settings;
 
 	}

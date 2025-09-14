@@ -55,6 +55,31 @@ jbang-fmt src/
 jbang-fmt MyFile.java src/ tests/
 ----
 
+**Using argument files (@ files):**
+
+You can use `@` files to specify arguments from a file, which is useful for complex configurations or when you have many files to format:
+
+[source,bash]
+----
+jbang-fmt @args.txt
+----
+
+Where `args.txt` contains:
+[source,text]
+----
+--style google
+--line-length 120
+--java 17
+src/main/java
+src/test/java
+----
+
+This is particularly useful for:
+* Complex formatting configurations
+* CI/CD pipelines where you want to version control the formatting arguments
+* Avoiding long command lines
+* Sharing formatting configurations across team members
+
 === Check Mode and CI Integration
 
 **Check if files would be formatted (perfect for CI):**
@@ -340,6 +365,33 @@ mvn jbang:run@format
 mvn jbang:run@check-format
 ----
 
+**Using @ files with Maven:**
+
+You can also use argument files with the jbang-maven-plugin:
+
+[source,xml]
+----
+<plugin>
+    <groupId>dev.jbang</groupId>
+    <artifactId>jbang-maven-plugin</artifactId>
+    <version>0.4.0</version>
+    <executions>
+        <execution>
+            <id>format</id>
+            <goals>
+                <goal>run</goal>
+            </goals>
+            <configuration>
+                <script>jbang-fmt@jbangdev/jbang-fmt</script>
+                <args>
+                    <arg>@formatting-args.txt</arg>
+                </args>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+
 **Integration with Maven build lifecycle (format before compile):**
 [source,xml]
 ----
@@ -468,6 +520,22 @@ task checkFormat(type: dev.jbang.gradle.JbangTask) {
 
 // Run format check before compilation
 compileJava.dependsOn checkFormat
+----
+
+**Using @ files with Gradle:**
+
+You can also use argument files with the jbang-gradle-plugin:
+
+[source,gradle]
+----
+plugins {
+    id 'dev.jbang.gradle' version '0.4.0'
+}
+
+task format(type: dev.jbang.gradle.JbangTask) {
+    script 'jbang-fmt@jbangdev/jbang-fmt'
+    args '@formatting-args.txt'
+}
 ----
 
 == TODO
