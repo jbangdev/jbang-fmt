@@ -1,5 +1,7 @@
 = JBang Java Formatter (`jbang-fmt`)
 
+image:images/jbang-fmt.png[]
+
 [NOTE]
 ====
 **⚠️ Experimental:** +
