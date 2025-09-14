@@ -22,7 +22,7 @@ This tool was created to solve that problem: it **formats Java code while leavin
 * **Stdout output:** Use `--stdout` to print formatted content to stdout instead of modifying files.
 * **Detailed statistics:** Shows processing time and file counts (processed, changed, clean, skipped).
 * **Eclipse formatter support:** Uses the Eclipse Java code formatter under the hood, with the ability to load custom Eclipse `.xml` or `.prefs` style settings.
-* **Advanced configuration:** Override specific formatter settings, line length, and Java version.
+* **Easy override:** Override specific formatter settings, line length, Java version, indentation type, and indentation size.
 * **Easy to use:** Simple CLI interface, works with files and directories, and can be run via https://www.jbang.dev/[JBang].
 * **Customizable:** Supports toggling JBang-friendly mode and specifying custom formatter settings.
 
@@ -70,10 +70,11 @@ jbang-fmt --check src/ tests/
 ----
 
 The `--check` flag will:
+
 * Show which files would be changed
+* Display timing and file statistics
 * Exit with code 1 if any files would change
 * Exit with code 0 if no changes are needed
-* Display timing and file statistics
 
 === Output to Stdout
 
@@ -96,7 +97,7 @@ This is useful for:
 jbang-fmt --style google MyFile.java
 ----
 
-The following styles are default bundled:
+The following predefined styles are available:
 
 * `jbang` — JBang's project style (default)
 * `eclipse` — Eclipse default Java formatter (Eclipse IDE style)
@@ -122,13 +123,23 @@ jbang jbang-fmt --style %{https://raw.githubusercontent.com/jbangdev/jbang-
 fmt/refs/heads/main/src/quarkus.xml} --check .
 ----
 
-=== Advanced Configuration
+=== Easy override
+
+It is highly recommended to use the `--style` option to specify the formatter style you want to use for reproducible formatting.
+
+But for those cases you might just want to do some one-off formatting without having to commit a new style file.
+
+Below are options to tweak the formatter using property keys + some short hands for common settings (line length, java version, etc.).
 
 **Override specific formatter settings:**
 [source,bash]
 ----
 jbang-fmt --settings "brace_style=next_line,indentation_size=4" MyFile.java
 ----
+
+The keys are the property keys from the Eclipse formatter settings file, you can find the full list in the https://github.com/jbangdev/jbang-fmt/tree/main/src/eclipse.xml[eclipse.xml] file.
+
+For ease of use you can leave out the `org.eclipse.jdt.core.formatter.` prefix.
 
 **Override line length:**
 [source,bash]
@@ -140,6 +151,25 @@ jbang-fmt --line-length 120 MyFile.java
 [source,bash]
 ----
 jbang-fmt --java 17 MyFile.java
+----
+
+**Override indentation type (spaces or tabs):**
+[source,bash]
+----
+jbang-fmt --indent-with space MyFile.java
+jbang-fmt --indent-with tab MyFile.java
+----
+
+**Override indentation size:**
+[source,bash]
+----
+jbang-fmt --indent-size 4 MyFile.java
+----
+
+**Combine multiple options:**
+[source,bash]
+----
+jbang-fmt --style google --line-length 100 --java 21 --indent-with space --indent-size 2 MyFile.java
 ----
 
 === Touch Directives

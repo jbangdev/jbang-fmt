@@ -10,6 +10,7 @@
 
 package dev.jbang.fmt;
 
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -25,14 +26,43 @@ import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.IParameterExceptionHandler;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.UnmatchedArgumentException;
 
 /**
  * Java formatter CLI tool supporting Eclipse and Google Java formatters.
  */
 @Command(name = "javafmt", mixinStandardHelpOptions = true, version = "1.0", description = "Format Java w/JBang source files using Eclipse Java formatter")
 public class Main implements Callable<Integer> {
+
+	static class ShortErrorMessageHandler implements IParameterExceptionHandler {
+
+		public int handleParseException(ParameterException ex, String[] args) {
+			CommandLine cmd = ex.getCommandLine();
+			PrintWriter err = cmd.getErr();
+
+			// if tracing at DEBUG level, show the location of the issue
+			if ("DEBUG".equalsIgnoreCase(System.getProperty("picocli.trace"))) {
+				err.println(cmd.getColorScheme().stackTraceText(ex));
+			}
+
+			err.println(cmd.getColorScheme().errorText(ex.getMessage())); // bold red
+			UnmatchedArgumentException.printSuggestions(ex, err);
+			err.println();
+			err.print(cmd.getHelp().fullSynopsis());
+
+			CommandSpec spec = cmd.getCommandSpec();
+			err.printf("Try '%s --help' for more information.%n", spec.qualifiedName());
+
+			return cmd.getExitCodeExceptionMapper() != null
+					? cmd.getExitCodeExceptionMapper().getExitCode(ex)
+					: spec.exitCodeOnInvalidInput();
+		}
+	}
 
 	/**
 	 * Tracks file processing statistics
@@ -99,6 +129,17 @@ public class Main implements Callable<Integer> {
 		@Option(names = "--line-length", description = "Override line length for formatter")
 		private Optional<Integer> lineLength;
 
+		enum IndentWith {
+			space,
+			tab
+		}
+
+		@Option(names = "--indent-with", description = "Use spaces or tabs for indentation")
+		private Optional<IndentWith> indentWith;
+
+		@Option(names = "--indent-size", description = "Override the indent size")
+		private Optional<Integer> indentSize;
+
 		@Option(names = "--java", description = "Override the java version in formatter (8, 11, 17, 21, etc.)")
 		private Optional<String> javaVersion;
 
@@ -108,7 +149,9 @@ public class Main implements Callable<Integer> {
 	}
 
 	public static void main(String[] args) {
-		int exitCode = new CommandLine(new Main()).execute(args);
+		int exitCode = new CommandLine(new Main())
+			.setParameterExceptionHandler(new ShortErrorMessageHandler())
+			.execute(args);
 		System.exit(exitCode);
 	}
 
@@ -117,6 +160,8 @@ public class Main implements Callable<Integer> {
 		if (override != null) {
 			System.out.println("Overriding " + key.replaceFirst("^org.eclipse.jdt.core.formatter.", "") + " from "
 					+ override + " to " + value);
+		} else {
+			System.out.println("Setting " + key.replaceFirst("^org.eclipse.jdt.core.formatter.", "") + " to " + value);
 		}
 	}
 
@@ -153,6 +198,15 @@ public class Main implements Callable<Integer> {
 						jv);
 				overrideSettings(realsettings, JavaCore.COMPILER_SOURCE,
 						jv);
+			});
+
+			formattingSettings.indentWith.ifPresent(iw -> {
+				overrideSettings(realsettings, "org.eclipse.jdt.core.formatter.tabulation.char", iw.name());
+			});
+			formattingSettings.indentSize.ifPresent(is -> {
+				overrideSettings(realsettings, "org.eclipse.jdt.core.formatter.indentation.size", is.toString());
+
+				overrideSettings(realsettings, "org.eclipse.jdt.core.formatter.tabulation.size", is.toString());
 			});
 
 			if (formattingSettings.settings != null) {
