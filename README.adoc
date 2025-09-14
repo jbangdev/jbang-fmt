@@ -159,7 +159,15 @@ Below are options to tweak the formatter using property keys + some short hands 
 **Override specific formatter settings:**
 [source,bash]
 ----
-jbang-fmt --settings "brace_style=next_line,indentation_size=4" MyFile.java
+jbang-fmt --setttings "brace_style=next_line,indentation_size=4" MyFile.java
+----
+
+or if you prefer to use compact key/value pairs.
+Below `compact_else_if` is as if it was set to `true` because no value was specified.
+
+[source,bash]
+----
+jbang-fmt -Stext_block_indentation=next_line -Scompact_else_if MyFile.java
 ----
 
 The keys are the property keys from the Eclipse formatter settings file, you can find the full list in the https://github.com/jbangdev/jbang-fmt/tree/main/src/eclipse.xml[eclipse.xml] file.
@@ -365,33 +373,6 @@ mvn jbang:run@format
 mvn jbang:run@check-format
 ----
 
-**Using @ files with Maven:**
-
-You can also use argument files with the jbang-maven-plugin:
-
-[source,xml]
-----
-<plugin>
-    <groupId>dev.jbang</groupId>
-    <artifactId>jbang-maven-plugin</artifactId>
-    <version>0.4.0</version>
-    <executions>
-        <execution>
-            <id>format</id>
-            <goals>
-                <goal>run</goal>
-            </goals>
-            <configuration>
-                <script>jbang-fmt@jbangdev/jbang-fmt</script>
-                <args>
-                    <arg>@formatting-args.txt</arg>
-                </args>
-            </configuration>
-        </execution>
-    </executions>
-</plugin>
-----
-
 **Integration with Maven build lifecycle (format before compile):**
 [source,xml]
 ----
@@ -522,22 +503,3 @@ task checkFormat(type: dev.jbang.gradle.JbangTask) {
 compileJava.dependsOn checkFormat
 ----
 
-**Using @ files with Gradle:**
-
-You can also use argument files with the jbang-gradle-plugin:
-
-[source,gradle]
-----
-plugins {
-    id 'dev.jbang.gradle' version '0.4.0'
-}
-
-task format(type: dev.jbang.gradle.JbangTask) {
-    script 'jbang-fmt@jbangdev/jbang-fmt'
-    args '@formatting-args.txt'
-}
-----
-
-== TODO
-
-* Add more examples for different formatter styles in Maven/Gradle
