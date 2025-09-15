@@ -6,18 +6,18 @@
 
 //FILES ../../../google.xml ../../../java.xml ../../../eclipse.xml ../../../jbang.xml ../../../spring.prefs ../../../quarkus.xml
 
-//SOURCES JavaFormatter.java CodeRange.java KeyValueConsumer.java CommaSeparatedConverter.java
+//SOURCES JavaFormatter.java CodeRange.java KeyValueConsumer.java CommaSeparatedConverter.java FmtLogger.java
 
 package dev.jbang.fmt;
+
+import static dev.jbang.fmt.FmtLogger.*;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -110,7 +110,7 @@ public class Main implements Callable<Integer> {
 			int mod = modified.get();
 			int skip = skipped.get();
 			int clean = proc - mod;
-			return String.format("Formatted %d files (%d changed, %d clean, %d skipped) in %.1fs", proc, mod,
+			return String.format("Processed %d files (%d changed, %d clean, %d skipped) in %.1fs", proc, mod,
 					clean, skip, getElapsedSeconds());
 		}
 
@@ -127,6 +127,9 @@ public class Main implements Callable<Integer> {
 
 	@Option(names = "--stdout", description = "Print formatted content to stdout")
 	private boolean stdout;
+
+	@CommandLine.ArgGroup(exclusive = true)
+	FmtLogger verboseQuietExclusive = new FmtLogger();
 
 	@Option(names = "--check", description = "Check if files would change. Exit 1 if any file would change.")
 	private boolean check;
@@ -175,10 +178,10 @@ public class Main implements Callable<Integer> {
 	void overrideSettings(Map<String, String> settings, String key, String value) {
 		var override = settings.put(key, value);
 		if (override != null) {
-			System.out.println("Overriding " + key.replaceFirst("^org.eclipse.jdt.core.formatter.", "") + " from "
+			verbose("Overriding " + key.replaceFirst("^org.eclipse.jdt.core.formatter.", "") + " from "
 					+ override + " to " + value);
 		} else {
-			System.out.println("Setting " + key.replaceFirst("^org.eclipse.jdt.core.formatter.", "") + " to " + value);
+			verbose("Setting " + key.replaceFirst("^org.eclipse.jdt.core.formatter.", "") + " to " + value);
 		}
 	}
 
@@ -237,7 +240,7 @@ public class Main implements Callable<Integer> {
 
 			formatter = new JavaFormatter(styleFile.toString(), realsettings, touchJBang);
 
-			System.out.println("Formatting with " + formatter + "...");
+			verbose("Formatting with " + formatter + "...");
 
 			FileStats stats = new FileStats();
 			formatFiles(sources, formatter, stdout, check, stats);
@@ -246,9 +249,9 @@ public class Main implements Callable<Integer> {
 			if (stdout) {
 				// For stdout mode, don't print summary as it would interfere with the output
 			} else if (check) {
-				System.out.println(stats.getCheckOutput());
+				requiredInfo(stats.getCheckOutput());
 			} else {
-				System.out.println(stats.getNormalOutput());
+				requiredInfo(stats.getNormalOutput());
 			}
 
 			return (check && stats.modified.get() > 0) ? 1 : 0;
@@ -383,7 +386,7 @@ public class Main implements Callable<Integer> {
 		}
 
 		if (fileChanged) {
-			System.out.println(file);
+			info(file.toString());
 			if (!check && !stdout) {
 				//could consider using atomic file operations for safety
 				//but for now keep it simple.

@@ -1,5 +1,7 @@
 package dev.jbang.fmt;
 
+import static dev.jbang.fmt.FmtLogger.verbose;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -116,7 +118,7 @@ class JavaFormatter {
 					}
 				}
 
-				System.out.println("Loaded " + settings.size() + " formatter settings from XML " + sourceDescription);
+				verbose("Loaded " + settings.size() + " formatter settings from XML " + sourceDescription);
 
 			} catch (Exception e) {
 				throw new IOException(
