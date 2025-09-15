@@ -256,8 +256,7 @@ public class Main implements Callable<Integer> {
 
 			return (check && stats.modified.get() > 0) ? 1 : 0;
 		} catch (Exception e) {
-			System.err.println("Error: " + e.getMessage());
-			e.printStackTrace();
+			error("Error: " + e.getMessage(), e);
 			return 1;
 		}
 	}
@@ -310,8 +309,7 @@ public class Main implements Callable<Integer> {
 							cpuLimit.acquire();
 							formatFile(p, formatter, stdout, check, stats);
 						} catch (Exception e) {
-							System.err.println("Failed " + p + ": " + e.getMessage());
-
+							error("Failed " + p + ": " + e.getMessage());
 						} finally {
 							cpuLimit.release();
 						}
@@ -356,7 +354,7 @@ public class Main implements Callable<Integer> {
 						stats.addSkipped();
 					}
 				} else {
-					System.err.println("Warning: Path does not exist: " + target);
+					error("Warning: Path does not exist: " + target);
 				}
 			}
 			// Poison pill to signal done
@@ -382,7 +380,7 @@ public class Main implements Callable<Integer> {
 
 		if (stdout) {
 			// Always print formatted content to stdout if requested.
-			System.out.print(formatted);
+			requiredInfo(formatted);
 		}
 
 		if (fileChanged) {

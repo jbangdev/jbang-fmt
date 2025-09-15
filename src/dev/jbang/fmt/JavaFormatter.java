@@ -1,5 +1,6 @@
 package dev.jbang.fmt;
 
+import static dev.jbang.fmt.FmtLogger.error;
 import static dev.jbang.fmt.FmtLogger.verbose;
 
 import java.io.FileInputStream;
@@ -62,7 +63,7 @@ class JavaFormatter {
 			edit.apply(doc);
 			return doc.get();
 		} else {
-			System.err.println("Warning: Eclipse formatter could not format the content");
+			error("Warning: Eclipse formatter could not format the content");
 			return content;
 		}
 	}

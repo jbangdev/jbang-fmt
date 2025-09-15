@@ -116,6 +116,39 @@ This is useful for:
 * Previewing changes before applying them
 * Integration with other build tools
 
+=== Verbose and Quiet Output
+
+The formatter provides two output control options to help you get the right amount of information for your use case:
+
+**Verbose mode (`--verbose`):**
+[source,bash]
+----
+jbang-fmt --verbose MyFile.java
+----
+
+Use verbose mode when you need to:
+* **Debug formatting issues** - See exactly which formatter settings are being overridden and what values they're being set to
+* **Understand formatter behavior** - Get detailed information about which formatter configuration is being used
+* **Troubleshoot CI/CD failures** - When format checks fail, verbose output helps identify what's causing the formatting differences
+* **Learn about formatter settings** - See how your command-line overrides (like `--line-length`, `--java`, etc.) translate to actual Eclipse formatter properties
+
+**Quiet mode (`--quiet` or `-q`):**
+[source,bash]
+----
+jbang-fmt --quiet MyFile.java
+# or
+jbang-fmt -q MyFile.java
+----
+
+Use quiet mode when you want to:
+* **Clean up CI/CD output** - Reduce noise in build logs by only showing errors
+* **Script integration** - When using the formatter in scripts where you only care about success/failure, not the process details
+* **Batch processing** - When formatting many files and you don't need to see each file being processed
+* **Focus on errors only** - Suppress normal output and only see error messages when something goes wrong
+
+**Default behavior:**
+Without either option, the formatter shows a balanced amount of information - it will display which files are being processed, the final statistics, and any errors, but won't show the detailed setting overrides that verbose mode provides.
+
 === Using Different Formatter Styles
 
 **Use Google Java Format style:**

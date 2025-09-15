@@ -21,29 +21,28 @@ class FmtLogger {
 		quiet = value;
 	}
 
-	public static boolean info(String message) {
-		if (quiet) {
-			return false;
+	public static void info(String message) {
+		if (!quiet) {
+			System.out.println(message);
 		}
-		System.out.println(message);
-		return true;
 	}
 
-	public static boolean requiredInfo(String message) {
+	public static void requiredInfo(String message) {
 		System.out.println(message);
-		return true;
 	}
 
-	public static boolean verbose(String message) {
-		if (!verbose) {
-			return false;
+	public static void verbose(String message) {
+		if (verbose) {
+			System.out.println(message);
 		}
-		System.out.println(message);
-		return true;
 	}
 
-	public static boolean error(String message) {
+	public static void error(String message) {
 		System.err.println(message);
-		return true;
+	}
+
+	public static void error(String message, Exception e) {
+		System.err.println(message);
+		e.printStackTrace(System.err);
 	}
 }
