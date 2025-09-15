@@ -1,6 +1,6 @@
 ///usr/bin/env jbang "$0" "$@" ; exit $?
 //JAVA 21+
-//DEPS org.eclipse.jdt:org.eclipse.jdt.core:3.37.0
+//DEPS org.eclipse.jdt:org.eclipse.jdt.core:3.43.0
 //DEPS org.eclipse.platform:org.eclipse.jface.text:3.28.0
 //DEPS info.picocli:picocli:4.7.7
 
@@ -10,18 +10,29 @@
 
 package dev.jbang.fmt;
 
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.stream.Stream;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
@@ -65,29 +76,29 @@ public class Main implements Callable<Integer> {
 	}
 
 	/**
-	 * Tracks file processing statistics
+	 * Tracks file processing statistics - thread-safe for concurrent access
 	 */
 	private static class FileStats {
-		int processed = 0;
-		int modified = 0;
-		int skipped = 0;
+		private final AtomicInteger processed = new AtomicInteger(0);
+		private final AtomicInteger modified = new AtomicInteger(0);
+		private final AtomicInteger skipped = new AtomicInteger(0);
 
-		long startTime;
+		private final long startTime;
 
 		FileStats() {
 			startTime = System.nanoTime();
 		}
 
 		void addProcessed() {
-			processed++;
+			processed.incrementAndGet();
 		}
 
 		void addModified() {
-			modified++;
+			modified.incrementAndGet();
 		}
 
 		void addSkipped() {
-			skipped++;
+			skipped.incrementAndGet();
 		}
 
 		double getElapsedSeconds() {
@@ -95,14 +106,19 @@ public class Main implements Callable<Integer> {
 		}
 
 		String getNormalOutput() {
-			int clean = processed - modified;
-			return String.format("Formatted %d files (%d changed, %d clean, %d skipped) in %.1fs", processed, modified,
-					clean, skipped, getElapsedSeconds());
+			int proc = processed.get();
+			int mod = modified.get();
+			int skip = skipped.get();
+			int clean = proc - mod;
+			return String.format("Formatted %d files (%d changed, %d clean, %d skipped) in %.1fs", proc, mod,
+					clean, skip, getElapsedSeconds());
 		}
 
 		String getCheckOutput() {
+			int mod = modified.get();
+			int proc = processed.get();
 			return String.format("Would reformat %d files (out of %d) in %.1fs. Run without --check to apply.",
-					modified, processed, getElapsedSeconds());
+					mod, proc, getElapsedSeconds());
 		}
 	}
 
@@ -151,8 +167,8 @@ public class Main implements Callable<Integer> {
 
 	public static void main(String[] args) {
 		int exitCode = new CommandLine(new Main())
-			.setParameterExceptionHandler(new ShortErrorMessageHandler())
-			.execute(args);
+				.setParameterExceptionHandler(new ShortErrorMessageHandler())
+				.execute(args);
 		System.exit(exitCode);
 	}
 
@@ -235,7 +251,7 @@ public class Main implements Callable<Integer> {
 				System.out.println(stats.getNormalOutput());
 			}
 
-			return (check && stats.modified > 0) ? 1 : 0;
+			return (check && stats.modified.get() > 0) ? 1 : 0;
 		} catch (Exception e) {
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace();
@@ -243,75 +259,138 @@ public class Main implements Callable<Integer> {
 		}
 	}
 
-	private static void formatFiles(List<Path> targets, JavaFormatter formatter, boolean stdout, boolean check,
+	private static void formatFiles(List<Path> sourcePaths, JavaFormatter formatter, boolean stdout, boolean check,
 			FileStats stats) throws Exception {
-		for (Path path : targets) {
-			if (Files.exists(path)) {
-				if (Files.isDirectory(path)) {
-					formatDirectory(path, formatter, stdout, check, stats);
-				} else if (path.toString().endsWith(".java")) {
-					formatFile(path, formatter, stdout, check, stats);
-				} else {
-					stats.addSkipped();
-					//System.out.println("Skipping non-Java file: " + path);
-				}
-			} else {
-				System.err.println("Warning: Path does not exist: " + path);
+
+		// Track processed files to avoid duplicates
+		Set<Path> processedFiles = ConcurrentHashMap.newKeySet();
+
+		// CPU limit semaphore to prevent overwhelming the system
+		var cpuLimit = new Semaphore(Runtime.getRuntime().availableProcessors());
+
+		var namingFactory = Thread.ofVirtual().name("fmt-", 0).factory();
+
+		try (var executor = Executors.newThreadPerTaskExecutor(namingFactory)) {
+			// Back-pressure: bounded queue of Paths
+			BlockingQueue<Path> queue = new ArrayBlockingQueue<Path>(10_000);
+
+			// Producer: walk directories and put files in queue
+			var walking = executor.submit(producePaths(sourcePaths, stats, queue));
+
+			// create Consumers: process files from queue, but no more than 2x the number of
+			// CPUs
+			int consumers = Math.max(2, Runtime.getRuntime().availableProcessors() * 2);
+			var tasks = new ArrayList<Future<?>>();
+			for (int i = 0; i < consumers; i++) {
+				tasks.add(executor.submit(() -> {
+					for (;;) {
+						Path p;
+						try {
+							p = queue.take();
+						} catch (InterruptedException e) {
+							Thread.currentThread().interrupt();
+							break;
+						}
+
+						if (p.equals(DONE)) {
+							queue.offer(p);
+							break;
+						}
+
+						// Skip if already processed
+						if (!processedFiles.add(p.toAbsolutePath())) {
+							continue;
+						}
+
+						// Acquire CPU permit before formatting
+						try {
+							cpuLimit.acquire();
+							formatFile(p, formatter, stdout, check, stats);
+						} catch (Exception e) {
+							System.err.println("Failed " + p + ": " + e.getMessage());
+
+						} finally {
+							cpuLimit.release();
+						}
+
+					}
+				}));
 			}
+
+			walking.get(); // propagate discovery errors
+			for (var t : tasks)
+				t.get(); // propagate formatting errors
 		}
 	}
 
-	private static void formatDirectory(Path dir, JavaFormatter formatter, boolean stdout, boolean check,
-			FileStats stats) throws Exception {
-		try (Stream<Path> paths = Files.walk(dir)) {
-			for (Path path : paths.filter(path -> path.toString().endsWith(".java")).toList()) {
-				try {
-					formatFile(path, formatter, stdout, check, stats);
-				} catch (Exception e) {
-					System.err.println("Error formatting " + path + ": " + e.getMessage());
+	private static final Path DONE = Path.of("::END::");
+
+	private static Runnable producePaths(List<Path> sourcePaths, FileStats stats, BlockingQueue<Path> queue) {
+		return () -> {
+			for (Path target : sourcePaths) {
+				if (Files.exists(target)) {
+					if (Files.isDirectory(target)) {
+						try (var paths = Files.walk(target)) {
+							paths.filter(Files::isRegularFile)
+									.filter(p -> p.toString().endsWith(".java"))
+									.forEach(p -> {
+										try {
+											queue.put(p);
+										} catch (InterruptedException ie) {
+											Thread.currentThread().interrupt();
+										}
+									});
+						} catch (IOException e) {
+							throw new UncheckedIOException(e);
+						}
+					} else if (target.toString().endsWith(".java")) {
+						try {
+							queue.put(target);
+						} catch (InterruptedException ie) {
+							Thread.currentThread().interrupt();
+						}
+					} else {
+						stats.addSkipped();
+					}
+				} else {
+					System.err.println("Warning: Path does not exist: " + target);
 				}
 			}
-		}
+			// Poison pill to signal done
+			queue.offer(DONE);
+		};
 	}
 
 	private static void formatFile(Path file, JavaFormatter formatter, boolean stdout, boolean check, FileStats stats)
 			throws Exception {
 
-		try {
-			// Read the file content
-			String content = new String(Files.readAllBytes(file));
+		// Read the file content
+		String content = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
+		String formatted = formatter.format(content);
+		boolean fileChanged = !formatted.equals(content);
 
-			String formatted = formatter.format(content);
 
-			boolean fileChanged = !formatted.equals(content);
+		// Always count as processed
+		stats.addProcessed();
 
-			// Always count as processed
-			stats.addProcessed();
+		// Count as modified if it would change
+		if (fileChanged) {
+			stats.addModified();
+		}
 
-			// Count as modified if it would change
-			if (fileChanged) {
-				stats.addModified();
+		if (stdout) {
+			// Always print formatted content to stdout if requested.
+			System.out.print(formatted);
+		} 
+		
+		if (fileChanged) {
+			System.out.println(file);
+			if(!check && !stdout) {
+				//could consider using atomic file operations for safety
+				//but for now keep it simple.
+				Files.copy(file, file.resolveSibling(file.getFileName().toString() + ".bak"), StandardCopyOption.REPLACE_EXISTING);
+				Files.write(file, formatted.getBytes(StandardCharsets.UTF_8));
 			}
-
-			if (stdout) {
-				// Print formatted content to stdout
-				System.out.print(formatted);
-			} else if (check) {
-				// Check mode: just report if file would change
-				if (fileChanged) {
-					System.out.println(file);
-				}
-			} else {
-				// Normal mode: write back if changed
-				if (fileChanged) {
-					System.out.println(file);
-					// Write back the formatted content
-					Files.write(file, formatted.getBytes());
-				}
-			}
-		} catch (Exception e) {
-			System.err.println("Error formatting " + file + ": " + e.getMessage());
-			// Don't rethrow, just continue with other files
 		}
 	}
 
