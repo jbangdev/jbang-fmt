@@ -167,8 +167,8 @@ public class Main implements Callable<Integer> {
 
 	public static void main(String[] args) {
 		int exitCode = new CommandLine(new Main())
-				.setParameterExceptionHandler(new ShortErrorMessageHandler())
-				.execute(args);
+			.setParameterExceptionHandler(new ShortErrorMessageHandler())
+			.execute(args);
 		System.exit(exitCode);
 	}
 
@@ -332,14 +332,14 @@ public class Main implements Callable<Integer> {
 					if (Files.isDirectory(target)) {
 						try (var paths = Files.walk(target)) {
 							paths.filter(Files::isRegularFile)
-									.filter(p -> p.toString().endsWith(".java"))
-									.forEach(p -> {
-										try {
-											queue.put(p);
-										} catch (InterruptedException ie) {
-											Thread.currentThread().interrupt();
-										}
-									});
+								.filter(p -> p.toString().endsWith(".java"))
+								.forEach(p -> {
+									try {
+										queue.put(p);
+									} catch (InterruptedException ie) {
+										Thread.currentThread().interrupt();
+									}
+								});
 						} catch (IOException e) {
 							throw new UncheckedIOException(e);
 						}
@@ -369,7 +369,6 @@ public class Main implements Callable<Integer> {
 		String formatted = formatter.format(content);
 		boolean fileChanged = !formatted.equals(content);
 
-
 		// Always count as processed
 		stats.addProcessed();
 
@@ -381,14 +380,15 @@ public class Main implements Callable<Integer> {
 		if (stdout) {
 			// Always print formatted content to stdout if requested.
 			System.out.print(formatted);
-		} 
-		
+		}
+
 		if (fileChanged) {
 			System.out.println(file);
-			if(!check && !stdout) {
+			if (!check && !stdout) {
 				//could consider using atomic file operations for safety
 				//but for now keep it simple.
-				Files.copy(file, file.resolveSibling(file.getFileName().toString() + ".bak"), StandardCopyOption.REPLACE_EXISTING);
+				Files.copy(file, file.resolveSibling(file.getFileName().toString() + ".bak"),
+						StandardCopyOption.REPLACE_EXISTING);
 				Files.write(file, formatted.getBytes(StandardCharsets.UTF_8));
 			}
 		}

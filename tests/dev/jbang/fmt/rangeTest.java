@@ -10,6 +10,7 @@ package dev.jbang.fmt;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.beans.Transient;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
@@ -47,6 +48,31 @@ public class rangeTest {
 		assertThat(ranges.get(0).start()).isEqualTo(0);
 		assertThat(ranges.get(0).end()).isEqualTo(alljava.length());
 	}
+
+	@Test
+	public void testDoubleSlashinString() throws Exception {
+		String transientCode = """
+			private static final String PROTO_SCHEMA = \"\"\"
+																																																																																																																					            // File name: Schema.proto
+// Generated from : Schema.proto
+																																																																																																																					            syntax = "proto2";
+
+
+																																																																																																																					            message ExpensiveResponse {
+
+																																																																																																																					               optional string result = 1;
+																																																																																																																					            }
+
+									\"\"\";
+		""";
+
+		List<CodeRange> ranges = CodeRange.identifyJavaRanges(transientCode);
+		assertThat(ranges).hasSize(1);
+
+		assertThat(ranges.get(0).start()).isEqualTo(0);
+		assertThat(ranges.get(0).end()).isEqualTo(transientCode.length());
+	}
+
 
 	@Test
 	public void testPureJBang() throws Exception {
