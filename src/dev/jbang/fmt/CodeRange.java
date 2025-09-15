@@ -49,7 +49,6 @@ public record CodeRange(int start, int end) {
 			ranges.add(new CodeRange(javaStart, currentPos));
 		}
 
-		System.out.println("Ranges: " + ranges);
 		return ranges;
 	}
 

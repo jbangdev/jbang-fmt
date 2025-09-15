@@ -387,8 +387,8 @@ public class Main implements Callable<Integer> {
 			if (!check && !stdout) {
 				//could consider using atomic file operations for safety
 				//but for now keep it simple.
-				Files.copy(file, file.resolveSibling(file.getFileName().toString() + ".bak"),
-						StandardCopyOption.REPLACE_EXISTING);
+				//Files.copy(file, file.resolveSibling(file.getFileName().toString() + ".bak"),
+				//		StandardCopyOption.REPLACE_EXISTING);
 				Files.write(file, formatted.getBytes(StandardCharsets.UTF_8));
 			}
 		}

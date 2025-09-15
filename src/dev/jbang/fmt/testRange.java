@@ -21,7 +21,7 @@ import org.junit.platform.console.ConsoleLauncher;
 import dev.jbang.fmt.CodeRange;
 
 // JUnit5 Test class for fmt
-public class rangeTest {
+public class testRange {
 
 	@Test
 	public void testDirectives() throws Exception {
@@ -54,10 +54,10 @@ public class rangeTest {
 	@Test
 	public void testDoubleSlashinString() throws Exception {
 		String transientCode = """
-			private static final String PROTO_SCHEMA = \"\"\"																																																																																																														            // File name: Schema.proto
-// Generated from : Schema.proto
-		\"\"\";
-		""";
+							private static final String PROTO_SCHEMA = \"\"\"																																																																																																														            // File name: Schema.proto
+				// Generated from : Schema.proto
+						\"\"\";
+						""";
 
 		List<CodeRange> ranges = CodeRange.identifyJavaRanges(transientCode);
 		assertThat(ranges).hasSize(1);
@@ -65,7 +65,6 @@ public class rangeTest {
 		assertThat(ranges.get(0).start()).isEqualTo(0);
 		assertThat(ranges.get(0).end()).isEqualTo(transientCode.length());
 	}
-
 
 	@Test
 	public void testPureJBang() throws Exception {

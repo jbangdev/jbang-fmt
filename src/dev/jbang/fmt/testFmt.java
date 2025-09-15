@@ -22,7 +22,7 @@ import org.junit.platform.console.ConsoleLauncher;
 import dev.jbang.fmt.JavaFormatter;
 
 // JUnit5 Test class for fmt
-public class fmtTest {
+public class testFmt {
 
 	private static Stream<JavaFormatter> formatters() {
 		return Stream.of(new JavaFormatter("test", null, true));

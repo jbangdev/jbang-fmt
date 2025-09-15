@@ -509,4 +509,3 @@ compileJava.dependsOn checkFormat
 
 Probably should make this a published jar on maven central and/or github release, jrelease etc....but for now just use it via JBang :)
 
-oh..and should paralize the formatting of files...
