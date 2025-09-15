@@ -30,7 +30,7 @@ import org.w3c.dom.NodeList;
 /**
  * Eclipse Java formatter implementation
  */
-class JavaFormatter {
+public class JavaFormatter {
 
 	private final Map<String, String> settings;
 	private final boolean touchJBang;
@@ -147,7 +147,7 @@ class JavaFormatter {
 	/**
 	 * Loads settings from classpath resources with intelligent name resolution
 	 */
-	static Map<String, String> loadSettingsFromClasspath(String fileName) throws IOException {
+	public static Map<String, String> loadSettingsFromClasspath(String fileName) throws IOException {
 		String resourceName = fileName;
 
 		// If no dots in name, try to find .xml or .prefs versions
@@ -181,7 +181,7 @@ class JavaFormatter {
 	/**
 	 * Loads Eclipse formatter settings from an XML file or .prefs properties file
 	 */
-	static Map<String, String> loadEclipseSettings(Path settingsFile) throws IOException {
+	public static Map<String, String> loadEclipseSettings(Path settingsFile) throws IOException {
 		String fileName = settingsFile.getFileName().toString();
 
 		// First try to load as a direct file

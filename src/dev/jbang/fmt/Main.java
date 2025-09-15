@@ -4,6 +4,8 @@
 //DEPS org.eclipse.platform:org.eclipse.jface.text:3.28.0
 //DEPS info.picocli:picocli:4.7.7
 
+//JAVAC_OPTIONS -proc:full -Averbose=true
+
 //FILES ../../../google.xml ../../../java.xml ../../../eclipse.xml ../../../jbang.xml ../../../spring.prefs ../../../quarkus.xml
 
 //SOURCES JavaFormatter.java CodeRange.java KeyValueConsumer.java CommaSeparatedConverter.java FmtLogger.java

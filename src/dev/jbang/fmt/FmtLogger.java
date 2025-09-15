@@ -4,7 +4,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ScopeType;
 
 // stupid simple "hack" for easy control of verbose and quiet output
-class FmtLogger {
+public class FmtLogger {
 
 	static boolean verbose = false;
 	static boolean quiet = false;
