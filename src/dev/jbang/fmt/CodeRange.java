@@ -67,13 +67,13 @@ public record CodeRange(int start, int end) {
 		}
 
 		// Check if it's followed by capital letters (JBang directive pattern)
-		String afterComment = trimmed.substring(2).trim();
+		String afterComment = trimmed.substring(2);
 		if (afterComment.isEmpty()) {
 			return false;
 		}
 
 		// Check if it starts with capital letters (like DEPS, JAVA_OPTIONS, etc.)
-		return Character.isUpperCase(afterComment.charAt(0));
+		return Character.isLetter(afterComment.charAt(0)) && Character.isUpperCase(afterComment.charAt(0));
 	}
 
 }
