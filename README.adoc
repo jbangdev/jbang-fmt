@@ -84,6 +84,7 @@ src/test/java
 ----
 
 This is particularly useful for:
+
 * Complex formatting configurations
 * CI/CD pipelines where you want to version control the formatting arguments
 * Avoiding long command lines
@@ -119,6 +120,7 @@ jbang-fmt --stdout MyFile.java
 ----
 
 This is useful for:
+
 * Piping formatted content to other tools
 * Previewing changes before applying them
 * Integration with other build tools
@@ -134,6 +136,7 @@ jbang-fmt --verbose MyFile.java
 ----
 
 Use verbose mode when you need to:
+
 * **Debug formatting issues** - See exactly which formatter settings are being overridden and what values they're being set to
 * **Understand formatter behavior** - Get detailed information about which formatter configuration is being used
 * **Troubleshoot CI/CD failures** - When format checks fail, verbose output helps identify what's causing the formatting differences
@@ -148,6 +151,7 @@ jbang-fmt -q MyFile.java
 ----
 
 Use quiet mode when you want to:
+
 * **Clean up CI/CD output** - Reduce noise in build logs by only showing errors
 * **Script integration** - When using the formatter in scripts where you only care about success/failure, not the process details
 * **Batch processing** - When formatting many files and you don't need to see each file being processed
