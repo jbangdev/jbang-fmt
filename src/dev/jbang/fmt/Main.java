@@ -326,7 +326,7 @@ public class Main implements Callable<Integer> {
 		}
 	}
 
-	private static final Path DONE = Path.of("::END::");
+	private static final Path DONE = Path.of("ENDENDEND");
 
 	private static Runnable producePaths(List<Path> sourcePaths, FileStats stats, BlockingQueue<Path> queue) {
 		return () -> {
