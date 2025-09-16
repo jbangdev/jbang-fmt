@@ -25,10 +25,17 @@ This tool was created to solve that problem: it **formats Java code while leavin
 * **Detailed statistics:** Shows processing time and file counts (processed, changed, clean, skipped).
 * **Eclipse formatter support:** Uses the Eclipse Java code formatter under the hood, with the ability to load custom Eclipse `.xml` or `.prefs` style settings.
 * **Easy override:** Override specific formatter settings, line length, Java version, indentation type, and indentation size.
-* **Easy to use:** Simple CLI interface, works with files and directories, and can be run via https://www.jbang.dev/[JBang].
+* **Easy to use:** Simple CLI interface, works with files and directories, and can be run via JBang.
 * **Customizable:** Supports toggling JBang-friendly mode and specifying custom formatter settings.
 
 == Usage
+
+You can try out the tool without installing using https://www.jbang.dev/[JBang]:
+
+[source,bash]
+----
+jbang jbang-fmt@jbangdev <parameters>
+----
 
 You can install (and run) the tool using JBang:
 
